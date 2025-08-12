@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -60,6 +61,7 @@ function AdminPanel() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<SystemClinic | null>(null);
+  const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [editUserForm, setEditUserForm] = useState({
     firstName: '',
     lastName: '',
@@ -411,6 +413,7 @@ function AdminPanel() {
                               role: user.role,
                               status: user.status,
                             });
+                            setEditUserDialogOpen(true);
                           }}
                         >
                           <Edit3 className="h-4 w-4 mr-1" />
