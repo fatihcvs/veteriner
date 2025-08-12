@@ -118,6 +118,50 @@ export class MemStorage implements IStorage {
   }
 
   private seedInitialData() {
+    // Create admin user
+    const adminUser = {
+      id: 'admin-user-id',
+      email: 'admin@vettrack.pro',
+      password: '78b7f6c9abf008e9b60bc50a789c4c80c30d62484c61520760e59af055744e0d1fe73161c0e2fcf8dd6af83a9b0650b5c3d9117e90e0f0f11187b9fe4c65eb31.61a87298444f26f09aa2df8684673d21', // hashed: admin123
+      firstName: 'System',
+      lastName: 'Administrator',
+      phone: '+90 555 123 4567',
+      whatsappPhone: '+90 555 123 4567',
+      whatsappOptIn: true,
+      locale: 'tr',
+      role: 'SUPER_ADMIN',
+      verifiedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(adminUser.id, adminUser);
+
+    // Create admin clinic
+    const adminClinic = {
+      id: 'admin-clinic-id',
+      name: 'VetTrack Pro Admin Klinik',
+      address: 'İstanbul, Türkiye',
+      phone: '+90 555 123 4567',
+      timeZone: 'Europe/Istanbul',
+      locale: 'tr',
+      ownerUserId: adminUser.id,
+      whatsappBusinessNumber: '+90 555 123 4567',
+      whatsappProvider: 'META',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.clinics.set(adminClinic.id, adminClinic);
+
+    // Add admin as clinic member
+    const adminMembership = {
+      id: 'admin-membership-id',
+      clinicId: adminClinic.id,
+      userId: adminUser.id,
+      role: 'CLINIC_ADMIN',
+      createdAt: new Date(),
+    };
+    this.clinicMembers.set(adminMembership.id, adminMembership);
+
     // Create sample vaccines
     const vaccines = [
       {
