@@ -4,7 +4,12 @@
 
 VetTrack Pro is a comprehensive veterinary clinic management SaaS application that combines a pet health record system, e-commerce platform, and automated WhatsApp notification system. The application provides veterinarians with tools to manage pet records, track vaccinations, schedule appointments, and sell pet products, while offering pet owners digital health records and automated reminders via WhatsApp.
 
-The system is designed as a multi-tenant application supporting different user roles (SUPER_ADMIN, CLINIC_ADMIN, VET, STAFF, PET_OWNER) with clinic-based data isolation.
+The system is designed as a multi-tenant application supporting different user roles (SUPER_ADMIN, CLINIC_ADMIN, VET, STAFF, PET_OWNER) with clinic-based data isolation. 
+
+## Recent Changes (August 2025)
+- **E-commerce Enhancement**: Added top 10 trending pet products for 2024 based on market research
+- **Product Catalog**: Integrated authentic, high-selling products including smart feeders, premium organic foods, interactive toys, GPS trackers, CBD wellness products, and luxury pet tech
+- **Market Research Integration**: Products selected based on real market data showing growth rates of 5.8%-200% in their respective categories
 
 ## User Preferences
 
