@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Bell, Send, Settings, Filter, Search, MessageSquare, Calendar, AlertTriangle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Bell, Send, Settings, Filter, Search, MessageSquare, Calendar, AlertTriangle, CheckCircle, Clock, X, Check, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +14,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -39,9 +44,97 @@ export default function Notifications() {
   const [activeTab, setActiveTab] = useState('all');
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
+  });
+
+  const { data: notificationStats = {}, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/notifications/stats'],
+  });
+
+  // Form schema for creating notifications
+  const notificationFormSchema = z.object({
+    title: z.string().min(1, 'Başlık gereklidir'),
+    body: z.string().min(1, 'Mesaj içeriği gereklidir'),
+    type: z.string().min(1, 'Bildirim türü seçiniz'),
+    channels: z.array(z.string()).min(1, 'En az bir kanal seçiniz'),
+    recipientId: z.string().optional(),
+    scheduledFor: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof notificationFormSchema>>({
+    resolver: zodResolver(notificationFormSchema),
+    defaultValues: {
+      title: '',
+      body: '',
+      type: 'CUSTOM',
+      channels: [],
+      recipientId: '',
+      scheduledFor: '',
+    },
+  });
+
+  // Mutations
+  const createNotificationMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof notificationFormSchema>) => {
+      const res = await apiRequest('POST', '/api/notifications', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/stats'] });
+      setIsComposeOpen(false);
+      form.reset();
+      toast({
+        title: 'Bildirim Oluşturuldu',
+        description: 'Yeni bildirim başarıyla oluşturuldu.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Hata',
+        description: 'Bildirim oluşturulurken bir hata oluştu.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest('PUT', `/api/notifications/${id}/read`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+    },
+  });
+
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest('DELETE', `/api/notifications/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/stats'] });
+      toast({
+        title: 'Bildirim Silindi',
+        description: 'Bildirim başarıyla silindi.',
+      });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const res = await apiRequest('PUT', `/api/notifications/${id}/status`, { status });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications/stats'] });
+    },
   });
 
   const notificationTypes = {
@@ -125,67 +218,142 @@ export default function Notifications() {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" size="sm">
             <Settings className="h-4 w-4 mr-2" />
             Ayarlar
           </Button>
           
           <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
             <DialogTrigger asChild>
-              <Button
+              <Button 
                 className="bg-medical-blue hover:bg-medical-blue/90"
-                data-testid="button-compose"
+                data-testid="button-new-notification"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Mesaj Gönder
+                Yeni Bildirim
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Yeni Mesaj Oluştur</DialogTitle>
+                <DialogTitle>Yeni Bildirim Oluştur</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Alıcı Türü</label>
-                  <select className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="ALL_OWNERS">Tüm Hayvan Sahipleri</option>
-                    <option value="ALL_STAFF">Tüm Personel</option>
-                    <option value="SPECIFIC_USER">Belirli Kullanıcı</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Kanal</label>
-                  <select className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="WHATSAPP">WhatsApp</option>
-                    <option value="EMAIL">E-posta</option>
-                    <option value="SMS">SMS</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Başlık</label>
-                  <Input placeholder="Mesaj başlığı" className="mt-1" />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Mesaj</label>
-                  <Textarea 
-                    placeholder="Mesajınızı yazın..." 
-                    className="mt-1"
-                    rows={4}
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit((data) => createNotificationMutation.mutate(data))} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Başlık</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Bildirim başlığı" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tür</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Bildirim türü seçin" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(notificationTypes).map(([key, type]) => (
+                                <SelectItem key={key} value={key}>
+                                  {type.icon} {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="body"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mesaj İçeriği</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Bildirim mesajınızı yazın..."
+                            rows={4}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setIsComposeOpen(false)}>
-                    İptal
-                  </Button>
-                  <Button className="bg-medical-blue hover:bg-medical-blue/90">
-                    Gönder
-                  </Button>
-                </div>
-              </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="channels"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gönderim Kanalları</FormLabel>
+                          <div className="space-y-2">
+                            {Object.entries(channels).map(([key, channel]) => (
+                              <label key={key} className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={field.value.includes(key)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      field.onChange([...field.value, key]);
+                                    } else {
+                                      field.onChange(field.value.filter(v => v !== key));
+                                    }
+                                  }}
+                                />
+                                <span>{channel.icon} {channel.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="scheduledFor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Zamanlama (Opsiyonel)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="datetime-local"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsComposeOpen(false)}>
+                      İptal
+                    </Button>
+                    <Button type="submit" disabled={createNotificationMutation.isPending}>
+                      {createNotificationMutation.isPending ? 'Oluşturuluyor...' : 'Gönder'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
@@ -198,7 +366,7 @@ export default function Notifications() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Toplam</p>
-                <p className="text-2xl font-bold text-slate-800">{totalNotifications}</p>
+                <p className="text-2xl font-bold text-slate-800">{notificationStats.total || totalNotifications}</p>
               </div>
               <Bell className="h-8 w-8 text-medical-blue" />
             </div>
@@ -209,10 +377,10 @@ export default function Notifications() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-professional-gray">Bekleyen</p>
-                <p className="text-2xl font-bold text-yellow-600">{pendingNotifications}</p>
+                <p className="text-sm font-medium text-professional-gray">Bekliyor</p>
+                <p className="text-2xl font-bold text-yellow-600">{notificationStats.pending || pendingNotifications}</p>
               </div>
-              <Calendar className="h-8 w-8 text-yellow-600" />
+              <Clock className="h-8 w-8 text-yellow-600" />
             </div>
           </CardContent>
         </Card>
@@ -221,10 +389,10 @@ export default function Notifications() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-professional-gray">Gönderilen</p>
-                <p className="text-2xl font-bold text-green-600">{sentNotifications}</p>
+                <p className="text-sm font-medium text-professional-gray">Gönderildi</p>
+                <p className="text-2xl font-bold text-green-600">{notificationStats.sent || sentNotifications}</p>
               </div>
-              <MessageSquare className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -234,9 +402,9 @@ export default function Notifications() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Başarısız</p>
-                <p className="text-2xl font-bold text-red-600">{failedNotifications}</p>
+                <p className="text-2xl font-bold text-red-600">{notificationStats.failed || failedNotifications}</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+              <X className="h-8 w-8 text-red-600" />
             </div>
           </CardContent>
         </Card>
@@ -252,51 +420,55 @@ export default function Notifications() {
         </TabsList>
 
         {/* Search and Filters */}
-        <Card className="mt-4">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-professional-gray" />
-                <Input
-                  placeholder="Başlık, mesaj veya alıcı ile ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-notifications"
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-medical-blue focus:border-medical-blue"
-                >
-                  <option value="">Tüm Türler</option>
-                  {Object.entries(notificationTypes).map(([key, type]) => (
-                    <option key={key} value={key}>{type.label}</option>
-                  ))}
-                </select>
-                
-                <select
-                  value={selectedChannel}
-                  onChange={(e) => setSelectedChannel(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:ring-medical-blue focus:border-medical-blue"
-                >
-                  <option value="">Tüm Kanallar</option>
-                  {Object.entries(channels).map(([key, channel]) => (
-                    <option key={key} value={key}>{channel.label}</option>
-                  ))}
-                </select>
-                
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtrele
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap gap-4 mt-4">
+          <div className="relative flex-1 min-w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-professional-gray" />
+            <Input
+              placeholder="Bildirim ara..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+              data-testid="input-search-notifications"
+            />
+          </div>
+          
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md"
+            data-testid="select-type"
+          >
+            <option value="">Tüm Türler</option>
+            {Object.entries(notificationTypes).map(([key, type]) => (
+              <option key={key} value={key}>{type.label}</option>
+            ))}
+          </select>
+          
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md"
+            data-testid="select-status"
+          >
+            <option value="">Tüm Durumlar</option>
+            <option value="PENDING">Bekliyor</option>
+            <option value="SENT">Gönderildi</option>
+            <option value="DELIVERED">Teslim Edildi</option>
+            <option value="FAILED">Başarısız</option>
+          </select>
+          
+          <select
+            value={selectedChannel}
+            onChange={(e) => setSelectedChannel(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md"
+            data-testid="select-channel"
+          >
+            <option value="">Tüm Kanallar</option>
+            {Object.entries(channels).map(([key, channel]) => (
+              <option key={key} value={key}>{channel.label}</option>
+            ))}
+          </select>
+        </div>
 
         <TabsContent value={activeTab} className="space-y-4">
           {/* Notifications List */}
@@ -343,25 +515,52 @@ export default function Notifications() {
                             </span>
                           )}
                         </div>
-
                       </div>
                     </div>
                     
                     <div className="flex gap-2">
                       {notification.status === 'PENDING' && (
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => updateStatusMutation.mutate({ id: notification.id, status: 'CANCELLED' })}
+                          data-testid={`button-cancel-${notification.id}`}
+                        >
+                          <X className="h-4 w-4 mr-1" />
                           İptal Et
                         </Button>
                       )}
                       
                       {notification.status === 'FAILED' && (
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => updateStatusMutation.mutate({ id: notification.id, status: 'PENDING' })}
+                          data-testid={`button-retry-${notification.id}`}
+                        >
+                          <Send className="h-4 w-4 mr-1" />
                           Tekrar Gönder
                         </Button>
                       )}
                       
-                      <Button variant="outline" size="sm">
-                        Detaylar
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => markAsReadMutation.mutate(notification.id)}
+                        data-testid={`button-read-${notification.id}`}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Okundu
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => deleteNotificationMutation.mutate(notification.id)}
+                        data-testid={`button-delete-${notification.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Sil
                       </Button>
                     </div>
                   </div>
@@ -389,6 +588,7 @@ export default function Notifications() {
                 <Button 
                   className="bg-medical-blue hover:bg-medical-blue/90"
                   onClick={() => setIsComposeOpen(true)}
+                  data-testid="button-create-first"
                 >
                   <Send className="h-4 w-4 mr-2" />
                   İlk Mesajı Gönder

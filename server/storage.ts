@@ -117,7 +117,12 @@ export interface IStorage {
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string): Promise<Notification[]>;
+  getAllNotifications(): Promise<Notification[]>;
   markNotificationSent(id: string): Promise<void>;
+  markNotificationRead(id: string): Promise<void>;
+  deleteNotification(id: string): Promise<void>;
+  updateNotificationStatus(id: string, status: string): Promise<Notification>;
+  getNotificationStats(): Promise<any>;
   
   // Staff operations
   getStaffMembers(clinicId?: string): Promise<any[]>;
@@ -1341,6 +1346,55 @@ export class MemStorage implements IStorage {
       notification.updatedAt = new Date();
       this.notifications.set(id, notification);
     }
+  }
+
+  async getAllNotifications(): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async markNotificationRead(id: string): Promise<void> {
+    const notification = this.notifications.get(id);
+    if (notification) {
+      notification.status = 'DELIVERED';
+      notification.updatedAt = new Date();
+      this.notifications.set(id, notification);
+    }
+  }
+
+  async deleteNotification(id: string): Promise<void> {
+    this.notifications.delete(id);
+  }
+
+  async updateNotificationStatus(id: string, status: string): Promise<Notification> {
+    const notification = this.notifications.get(id);
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
+    
+    notification.status = status as any;
+    notification.updatedAt = new Date();
+    if (status === 'SENT') {
+      notification.sentAt = new Date();
+    }
+    
+    this.notifications.set(id, notification);
+    return notification;
+  }
+
+  async getNotificationStats(): Promise<any> {
+    const notifications = Array.from(this.notifications.values());
+    
+    return {
+      total: notifications.length,
+      pending: notifications.filter(n => n.status === 'PENDING').length,
+      sent: notifications.filter(n => n.status === 'SENT').length,
+      delivered: notifications.filter(n => n.status === 'DELIVERED').length,
+      failed: notifications.filter(n => n.status === 'FAILED').length,
+      recentlySent: notifications.filter(n => 
+        n.sentAt && new Date(n.sentAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+      ).length
+    };
   }
 
   // Feeding plan operations

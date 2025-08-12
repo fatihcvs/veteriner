@@ -729,11 +729,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/notifications', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const notifications = await storage.getUserNotifications(userId);
+      const user = await storage.getUser(userId);
+      
+      let notifications = [];
+      if (user?.role === 'PET_OWNER') {
+        notifications = await storage.getUserNotifications(userId);
+      } else {
+        // Admins and staff can see all notifications
+        notifications = await storage.getAllNotifications();
+      }
+      
       res.json(notifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get('/api/notifications/stats', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can access notification stats
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const stats = await storage.getNotificationStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching notification stats:", error);
+      res.status(500).json({ message: "Failed to fetch notification stats" });
+    }
+  });
+
+  app.post('/api/notifications', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can create notifications
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const notificationData = req.body;
+      const notification = await storage.createNotification({
+        ...notificationData,
+        userId: notificationData.recipientId || userId,
+        status: 'PENDING'
+      });
+      
+      res.status(201).json(notification);
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      res.status(500).json({ message: "Failed to create notification" });
+    }
+  });
+
+  app.put('/api/notifications/:id/status', requireAuth, async (req: any, res) => {
+    try {
+      const { status } = req.body;
+      const notification = await storage.updateNotificationStatus(req.params.id, status);
+      res.json(notification);
+    } catch (error) {
+      console.error("Error updating notification status:", error);
+      res.status(500).json({ message: "Failed to update notification status" });
+    }
+  });
+
+  app.put('/api/notifications/:id/read', requireAuth, async (req: any, res) => {
+    try {
+      await storage.markNotificationRead(req.params.id);
+      res.json({ message: 'Notification marked as read' });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  app.delete('/api/notifications/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can delete notifications
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      await storage.deleteNotification(req.params.id);
+      res.json({ message: 'Notification deleted successfully' });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      res.status(500).json({ message: "Failed to delete notification" });
     }
   });
 
