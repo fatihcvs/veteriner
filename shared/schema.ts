@@ -149,11 +149,14 @@ export const foodProducts = pgTable("food_products", {
 export const feedingPlans = pgTable("feeding_plans", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   petId: uuid("pet_id").references(() => pets.id).notNull(),
-  dailyGramsRecommended: integer("daily_grams_recommended").notNull(),
+  petWeightKg: integer("pet_weight_kg").notNull(), // Köpek ağırlığı kg cinsinden
+  dailyGramsRecommended: integer("daily_grams_recommended").notNull(), // Günlük mama miktarı gram cinsinden
   foodProductId: uuid("food_product_id").references(() => foodProducts.id).notNull(),
   startDate: date("start_date").notNull(),
-  packageSizeGrams: integer("package_size_grams").notNull(),
-  expectedDepletionDate: date("expected_depletion_date"),
+  packageSizeGrams: integer("package_size_grams").notNull(), // Paket büyüklüğü gram cinsinden
+  expectedDepletionDate: date("expected_depletion_date"), // Tahmini bitiş tarihi
+  estimatedDaysLeft: integer("estimated_days_left"), // Kalan gün sayısı
+  notificationSent: boolean("notification_sent").default(false), // Bildirim gönderildi mi?
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -309,6 +312,15 @@ export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertFeedingPlanSchema = createInsertSchema(feedingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  expectedDepletionDate: true,
+  estimatedDaysLeft: true,
+  notificationSent: true,
 });
 
 export const insertFoodProductSchema = createInsertSchema(foodProducts).omit({

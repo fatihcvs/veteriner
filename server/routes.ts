@@ -448,6 +448,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Feeding Plans
+  app.get('/api/feeding-plans', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const feedingPlans = await storage.getFeedingPlans(userId);
+      res.json(feedingPlans);
+    } catch (error) {
+      console.error("Error fetching feeding plans:", error);
+      res.status(500).json({ message: "Failed to fetch feeding plans" });
+    }
+  });
+
+  app.post('/api/feeding-plans', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const planData = req.body;
+      
+      // Validate the pet belongs to user
+      const pet = await storage.getPet(planData.petId);
+      if (!pet || pet.ownerId !== userId) {
+        return res.status(403).json({ message: "Pet not found or access denied" });
+      }
+
+      const feedingPlan = await storage.createFeedingPlan(planData);
+      res.status(201).json(feedingPlan);
+    } catch (error) {
+      console.error("Error creating feeding plan:", error);
+      res.status(500).json({ message: "Failed to create feeding plan" });
+    }
+  });
+
+  app.get('/api/feeding-plans/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const feedingPlan = await storage.getFeedingPlan(id);
+      
+      if (!feedingPlan) {
+        return res.status(404).json({ message: "Feeding plan not found" });
+      }
+
+      // Check if user owns the pet
+      if (feedingPlan.pet?.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json(feedingPlan);
+    } catch (error) {
+      console.error("Error fetching feeding plan:", error);
+      res.status(500).json({ message: "Failed to fetch feeding plan" });
+    }
+  });
+
+  app.put('/api/feeding-plans/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const existingPlan = await storage.getFeedingPlan(id);
+      if (!existingPlan) {
+        return res.status(404).json({ message: "Feeding plan not found" });
+      }
+
+      // Check if user owns the pet
+      if (existingPlan.pet?.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const updatedPlan = await storage.updateFeedingPlan(id, updates);
+      res.json(updatedPlan);
+    } catch (error) {
+      console.error("Error updating feeding plan:", error);
+      res.status(500).json({ message: "Failed to update feeding plan" });
+    }
+  });
+
+  app.delete('/api/feeding-plans/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      const existingPlan = await storage.getFeedingPlan(id);
+      if (!existingPlan) {
+        return res.status(404).json({ message: "Feeding plan not found" });
+      }
+
+      // Check if user owns the pet
+      if (existingPlan.pet?.ownerId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      await storage.deleteFeedingPlan(id);
+      res.json({ message: "Feeding plan deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting feeding plan:", error);
+      res.status(500).json({ message: "Failed to delete feeding plan" });
+    }
+  });
+
   // Notifications
   app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
     try {

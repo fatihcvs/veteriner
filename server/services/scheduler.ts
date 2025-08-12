@@ -44,10 +44,41 @@ export class SchedulerService {
   private async checkFoodDepletionReminders() {
     console.log('Checking food depletion reminders...');
     
-    // In a real implementation:
-    // 1. Query feeding plans with expectedDepletionDate in -7, -1 days
-    // 2. Check if reminders already sent
-    // 3. Send reminders via notification service
+    try {
+      // Get all active feeding plans
+      const feedingPlans = await storage.getFeedingPlans();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      for (const plan of feedingPlans) {
+        if (!plan.expectedDepletionDate || plan.notificationSent) continue;
+        
+        const depletionDate = new Date(plan.expectedDepletionDate);
+        const timeDiff = depletionDate.getTime() - today.getTime();
+        const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+        // Send notification 7 days before or 1 day before
+        if (daysLeft === 7 || daysLeft === 1) {
+          const pet = plan.pet;
+          const owner = pet ? await storage.getUser(pet.ownerId) : null;
+          
+          if (owner && pet) {
+            await notificationService.sendFoodDepletionReminder(
+              owner.id,
+              pet.name,
+              plan.expectedDepletionDate,
+              plan.dailyGramsRecommended
+            );
+            
+            // Mark notification as sent
+            await storage.updateFeedingPlan(plan.id, { notificationSent: true });
+            console.log(`Food depletion reminder sent for ${pet.name} (${daysLeft} days left)`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking food depletion reminders:', error);
+    }
   }
 
   async scheduleVaccinationReminder(petId: string, vaccineId: string, dueDate: Date) {

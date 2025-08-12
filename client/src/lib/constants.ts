@@ -84,6 +84,13 @@ export const NAVIGATION_ITEMS = [
     badge: true,
   },
   {
+    key: 'feeding',
+    label: 'Mama Takibi',
+    icon: 'fas fa-bowl-food',
+    href: '/feeding',
+    badge: true,
+  },
+  {
     key: 'medical-records',
     label: 'Tıbbi Kayıtlar',
     icon: 'fas fa-file-medical',

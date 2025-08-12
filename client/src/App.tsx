@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Pets from "@/pages/pets";
 import Appointments from "@/pages/appointments";
 import Vaccinations from "@/pages/vaccinations";
+import Feeding from "@/pages/feeding";
 import Shop from "@/pages/shop";
 import Orders from "@/pages/orders";
 import Settings from "@/pages/settings";
@@ -28,6 +29,7 @@ function Router() {
           <Route path="/pets" component={Pets} />
           <Route path="/appointments" component={Appointments} />
           <Route path="/vaccinations" component={Vaccinations} />
+          <Route path="/feeding" component={Feeding} />
           <Route path="/shop" component={Shop} />
           <Route path="/orders" component={Orders} />
           <Route path="/settings" component={Settings} />

@@ -72,6 +72,13 @@ export interface IStorage {
   getClinicAppointments(clinicId: string, date?: string): Promise<any[]>;
   updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
   
+  // Feeding plan operations
+  createFeedingPlan(plan: any): Promise<any>;
+  getFeedingPlans(userId?: string, clinicId?: string): Promise<any[]>;
+  getFeedingPlan(id: string): Promise<any | undefined>;
+  updateFeedingPlan(id: string, updates: any): Promise<any>;
+  deleteFeedingPlan(id: string): Promise<void>;
+  
   // Notification operations
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string): Promise<Notification[]>;
@@ -439,6 +446,61 @@ export class MemStorage implements IStorage {
       notification.updatedAt = new Date();
       this.notifications.set(id, notification);
     }
+  }
+
+  // Feeding plan operations
+  async createFeedingPlan(planData: any): Promise<any> {
+    const plan = {
+      id: randomUUID(),
+      ...planData,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.feedingPlans.set(plan.id, plan);
+    return plan;
+  }
+
+  async getFeedingPlans(userId?: string, clinicId?: string): Promise<any[]> {
+    return Array.from(this.feedingPlans.values())
+      .filter(plan => {
+        if (userId) {
+          const pet = this.pets.get(plan.petId);
+          if (!pet || pet.ownerId !== userId) return false;
+        }
+        if (clinicId) {
+          const pet = this.pets.get(plan.petId);
+          if (!pet || pet.clinicId !== clinicId) return false;
+        }
+        return plan.active;
+      })
+      .map(plan => {
+        const pet = this.pets.get(plan.petId);
+        const foodProduct = this.foodProducts.get(plan.foodProductId);
+        return { ...plan, pet, foodProduct };
+      });
+  }
+
+  async getFeedingPlan(id: string): Promise<any | undefined> {
+    const plan = this.feedingPlans.get(id);
+    if (plan) {
+      const pet = this.pets.get(plan.petId);
+      const foodProduct = this.foodProducts.get(plan.foodProductId);
+      return { ...plan, pet, foodProduct };
+    }
+    return undefined;
+  }
+
+  async updateFeedingPlan(id: string, updates: any): Promise<any> {
+    const plan = this.feedingPlans.get(id);
+    if (!plan) throw new Error('Feeding plan not found');
+    
+    const updatedPlan = { ...plan, ...updates, updatedAt: new Date() };
+    this.feedingPlans.set(id, updatedPlan);
+    return updatedPlan;
+  }
+
+  async deleteFeedingPlan(id: string): Promise<void> {
+    this.feedingPlans.delete(id);
   }
 }
 
