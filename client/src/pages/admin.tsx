@@ -122,6 +122,19 @@ function AdminPanel() {
     queryKey: ['/api/vaccinations/overdue'],
   });
 
+  // Food tracking data queries
+  const { data: allProducts, isLoading: productsLoading } = useQuery({
+    queryKey: ['/api/products'],
+  });
+
+  const { data: allOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/orders'],
+  });
+
+  const { data: lowStockProducts, isLoading: lowStockLoading } = useQuery({
+    queryKey: ['/api/admin/low-stock-products'],
+  });
+
   // User management mutations
   const updateUserMutation = useMutation({
     mutationFn: async (data: { userId: string; updates: any }) => {
@@ -286,11 +299,12 @@ function AdminPanel() {
 
       {/* Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-10">
+        <TabsList className="grid w-full grid-cols-11">
           <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
           <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
           <TabsTrigger value="pets">Hayvanlar</TabsTrigger>
           <TabsTrigger value="vaccinations">Aşı Kayıtları</TabsTrigger>
+          <TabsTrigger value="food-tracking">Mama Takibi</TabsTrigger>
           <TabsTrigger value="clinics">Klinikler</TabsTrigger>
           <TabsTrigger value="pages">Sayfalar</TabsTrigger>
           <TabsTrigger value="content">İçerik</TabsTrigger>
@@ -803,6 +817,433 @@ function AdminPanel() {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        {/* Food Tracking Tab */}
+        <TabsContent value="food-tracking" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Toplam Ürün</p>
+                    <p className="text-2xl font-bold text-slate-800">{(allProducts || []).length}</p>
+                  </div>
+                  <Package className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Düşük Stok</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {(allProducts || []).filter(p => p.stockQty < 10).length}
+                    </p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Toplam Sipariş</p>
+                    <p className="text-2xl font-bold text-slate-800">{(allOrders || []).length}</p>
+                  </div>
+                  <Package className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Toplam Değer</p>
+                    <p className="text-2xl font-bold text-slate-800">
+                      ₺{(allProducts || []).reduce((sum, p) => sum + (parseFloat(p.price || '0') * (p.stockQty || 0)), 0).toLocaleString('tr-TR')}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="inventory" className="w-full">
+            <TabsList>
+              <TabsTrigger value="inventory">Stok Durumu</TabsTrigger>
+              <TabsTrigger value="low-stock">Düşük Stok</TabsTrigger>
+              <TabsTrigger value="orders">Siparişler</TabsTrigger>
+              <TabsTrigger value="analytics">Analitikler</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="inventory" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Mama & Ürün Envanteri ({(allProducts || []).length})
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      <Button onClick={() => {
+                        toast({ title: "Yeni ürün ekleme özelliği yakında aktif olacak" });
+                      }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Yeni Ürün
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        toast({ title: "Excel export özelliği yakında aktif olacak" });
+                      }}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Excel İndir
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {productsLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="space-y-4">
+                      {(allProducts || []).map((product: any) => (
+                        <div key={product.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex gap-4 flex-1">
+                              {product.images && product.images[0] && (
+                                <img 
+                                  src={product.images[0]} 
+                                  alt={product.name}
+                                  className="w-16 h-16 object-cover rounded-lg"
+                                />
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-medium text-lg">{product.name}</h4>
+                                  <Badge className="bg-blue-100 text-blue-800">
+                                    {product.brand}
+                                  </Badge>
+                                  <Badge className={product.species === 'DOG' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}>
+                                    {product.species === 'DOG' ? 'Köpek' : 'Kedi'}
+                                  </Badge>
+                                  {product.stockQty < 10 && (
+                                    <Badge className="bg-red-100 text-red-800">
+                                      Düşük Stok!
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-professional-gray mb-3">
+                                  <div>
+                                    <span className="font-medium">Fiyat:</span><br />
+                                    ₺{parseFloat(product.price || '0').toLocaleString('tr-TR')}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Stok:</span><br />
+                                    <span className={product.stockQty < 10 ? 'text-red-600 font-medium' : ''}>
+                                      {product.stockQty} adet
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Paket:</span><br />
+                                    {product.packageSizeGrams ? `${product.packageSizeGrams}g` : 'Belirtilmemiş'}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">SKU:</span><br />
+                                    {product.sku}
+                                  </div>
+                                </div>
+
+                                {product.description && (
+                                  <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                                    <p className="text-sm text-slate-700">
+                                      {product.description.substring(0, 150)}
+                                      {product.description.length > 150 && '...'}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2 ml-4">
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-1" />
+                                Görüntüle
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Edit3 className="h-4 w-4 mr-1" />
+                                Düzenle
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-red-600">
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Sil
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {(allProducts || []).length === 0 && (
+                        <div className="text-center py-8">
+                          <Package className="h-16 w-16 mx-auto text-professional-gray mb-4" />
+                          <p className="text-professional-gray">Henüz ürün bulunmuyor</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="low-stock" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    Düşük Stok Uyarıları ({(allProducts || []).filter(p => p.stockQty < 10).length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {(allProducts || [])
+                      .filter(product => product.stockQty < 10)
+                      .map((product: any) => (
+                        <div key={product.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {product.images && product.images[0] && (
+                                <img 
+                                  src={product.images[0]} 
+                                  alt={product.name}
+                                  className="w-12 h-12 object-cover rounded-lg"
+                                />
+                              )}
+                              <div>
+                                <h4 className="font-medium text-red-800">{product.name}</h4>
+                                <p className="text-sm text-red-600">
+                                  Marka: {product.brand} - Kalan: {product.stockQty} adet
+                                </p>
+                                <p className="text-xs text-red-500">
+                                  Kritik seviye: 10 adet altında
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                                <Plus className="h-4 w-4 mr-1" />
+                                Stok Ekle
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                Sipariş Ver
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    
+                    {(allProducts || []).filter(p => p.stockQty < 10).length === 0 && (
+                      <div className="text-center py-8">
+                        <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
+                        <p className="text-green-600 font-medium">Harika! Düşük stok uyarısı yok</p>
+                        <p className="text-professional-gray text-sm">Tüm ürünler yeterli stokta</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="orders" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Sipariş Yönetimi ({(allOrders || []).length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {ordersLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="space-y-4">
+                      {(allOrders || []).map((order: any) => (
+                        <div key={order.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-medium">Sipariş #{order.id.substring(0, 8)}</h4>
+                                <Badge className={
+                                  order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                  order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
+                                  order.status === 'PAID' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }>
+                                  {order.status === 'DELIVERED' ? 'Teslim Edildi' :
+                                   order.status === 'SHIPPED' ? 'Kargoda' :
+                                   order.status === 'PAID' ? 'Ödendi' : 'Bekliyor'}
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-professional-gray">
+                                <div>
+                                  <span className="font-medium">Müşteri:</span><br />
+                                  {order.customerName || 'Bilinmeyen'}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Tutar:</span><br />
+                                  ₺{parseFloat(order.totalAmount || '0').toLocaleString('tr-TR')}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Tarih:</span><br />
+                                  {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Ürün Sayısı:</span><br />
+                                  {order.itemCount || 0} adet
+                                </div>
+                              </div>
+
+                              {order.shippingAddress && (
+                                <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                                  <p className="text-sm text-slate-700">
+                                    <span className="font-medium">Teslimat Adresi:</span> {JSON.stringify(order.shippingAddress)}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2 ml-4">
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-1" />
+                                Detay
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Edit3 className="h-4 w-4 mr-1" />
+                                Düzenle
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {(allOrders || []).length === 0 && (
+                        <div className="text-center py-8">
+                          <Package className="h-16 w-16 mx-auto text-professional-gray mb-4" />
+                          <p className="text-professional-gray">Henüz sipariş bulunmuyor</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="analytics" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>En Çok Satan Ürünler</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {(allProducts || [])
+                        .sort((a, b) => (b.stockQty || 0) - (a.stockQty || 0))
+                        .slice(0, 5)
+                        .map((product: any, index: number) => (
+                          <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium">
+                                {index + 1}
+                              </div>
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-professional-gray">{product.brand}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">₺{parseFloat(product.price || '0').toLocaleString('tr-TR')}</p>
+                              <p className="text-sm text-professional-gray">{product.stockQty} stok</p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Kategori Dağılımı</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                          <span>Köpek Ürünleri</span>
+                        </div>
+                        <span className="font-medium">
+                          {(allProducts || []).filter(p => p.species === 'DOG').length} ürün
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+                          <span>Kedi Ürünleri</span>
+                        </div>
+                        <span className="font-medium">
+                          {(allProducts || []).filter(p => p.species === 'CAT').length} ürün
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                          <span>Genel Ürünler</span>
+                        </div>
+                        <span className="font-medium">
+                          {(allProducts || []).filter(p => !p.species || (p.species !== 'DOG' && p.species !== 'CAT')).length} ürün
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Stok Durumu Özeti</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {(allProducts || []).filter(p => p.stockQty >= 20).length}
+                      </div>
+                      <div className="text-sm text-professional-gray">Yeterli Stok</div>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {(allProducts || []).filter(p => p.stockQty >= 10 && p.stockQty < 20).length}
+                      </div>
+                      <div className="text-sm text-professional-gray">Orta Seviye</div>
+                    </div>
+                    <div className="text-center p-4 border rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">
+                        {(allProducts || []).filter(p => p.stockQty < 10).length}
+                      </div>
+                      <div className="text-sm text-professional-gray">Düşük Stok</div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
