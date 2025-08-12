@@ -98,7 +98,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
               YÖNETİM
             </p>
-            {MANAGEMENT_ITEMS.map((item) => {
+            {MANAGEMENT_ITEMS.filter((item) => {
+              // Show admin panel only for SUPER_ADMIN and CLINIC_ADMIN
+              if (item.adminOnly) {
+                return user?.role === 'SUPER_ADMIN' || user?.role === 'CLINIC_ADMIN';
+              }
+              return true;
+            }).map((item) => {
               const isActive = location === item.href;
               return (
                 <Link key={item.key} href={item.href}>

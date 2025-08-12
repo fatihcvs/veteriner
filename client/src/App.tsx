@@ -18,6 +18,7 @@ import Orders from "@/pages/orders";
 import Inventory from "@/pages/inventory";
 import Staff from "@/pages/staff";
 import Notifications from "@/pages/notifications";
+import AdminPanel from "@/pages/admin";
 import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/inventory" component={Inventory} />
           <Route path="/staff" component={Staff} />
           <Route path="/notifications" component={Notifications} />
+          <Route path="/admin" component={AdminPanel} />
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={Settings} />
         </AppLayout>

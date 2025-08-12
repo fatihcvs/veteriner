@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
+import { setupAdminRoutes } from "./admin";
 import { insertPetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema, updateUserProfileSchema, updatePetOwnerProfileSchema } from "@shared/schema";
 import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
@@ -10,6 +11,9 @@ import { pdfService } from "./services/pdf";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   setupAuth(app);
+  
+  // Admin routes
+  setupAdminRoutes(app);
 
   // Start scheduler service
   schedulerService.start();

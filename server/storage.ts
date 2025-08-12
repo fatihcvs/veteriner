@@ -109,6 +109,19 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUserNotifications(userId: string): Promise<Notification[]>;
   markNotificationSent(id: string): Promise<void>;
+  
+  // Admin operations
+  getAdminStats(): Promise<any>;
+  getAllUsers(): Promise<any[]>;
+  updateUserByAdmin(userId: string, updates: any): Promise<User | undefined>;
+  deleteUser(userId: string): Promise<void>;
+  getAllClinics(): Promise<any[]>;
+  updateClinic(clinicId: string, updates: any): Promise<any>;
+  getSystemLogs(): Promise<any[]>;
+  createSystemBackup(): Promise<any>;
+  restoreSystemBackup(backupId: string): Promise<any>;
+  updateSystemSettings(settings: any): Promise<any>;
+  getSystemSettings(): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -125,6 +138,7 @@ export class MemStorage implements IStorage {
   private orderItems = new Map<string, any>();
   private appointments = new Map<string, Appointment>();
   private notifications = new Map<string, Notification>();
+  public sessionStore: any = null;
 
   constructor() {
     this.seedInitialData();
@@ -744,6 +758,140 @@ export class MemStorage implements IStorage {
 
   async deleteFeedingPlan(id: string): Promise<void> {
     this.feedingPlans.delete(id);
+  }
+
+  // Admin operations
+  async getAdminStats(): Promise<any> {
+    return {
+      totalUsers: this.users.size,
+      totalClinics: this.clinics.size,
+      totalPets: this.pets.size,
+      totalAppointments: this.appointments.size,
+      totalOrders: this.orders.size,
+      totalRevenue: Array.from(this.orders.values())
+        .reduce((sum, order) => sum + parseFloat(order.totalAmount || '0'), 0),
+      activeUsers: Array.from(this.users.values())
+        .filter(user => user.verifiedAt).length,
+      systemHealth: 'ONLINE',
+    };
+  }
+
+  async getAllUsers(): Promise<any[]> {
+    return Array.from(this.users.values()).map(user => {
+      const clinic = Array.from(this.clinics.values())
+        .find(c => c.ownerUserId === user.id);
+      return {
+        ...user,
+        clinicId: clinic?.id,
+        clinicName: clinic?.name,
+        status: user.verifiedAt ? 'ACTIVE' : 'INACTIVE',
+      };
+    });
+  }
+
+  async updateUserByAdmin(userId: string, updates: any): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+
+    const updatedUser = { ...user, ...updates, updatedAt: new Date() };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Don't delete super admins
+    const user = this.users.get(userId);
+    if (user?.role === 'SUPER_ADMIN') {
+      throw new Error('Cannot delete super admin');
+    }
+    
+    this.users.delete(userId);
+  }
+
+  async getAllClinics(): Promise<any[]> {
+    return Array.from(this.clinics.values()).map(clinic => {
+      const userCount = Array.from(this.users.values())
+        .filter(user => user.id === clinic.ownerUserId).length;
+      const petCount = Array.from(this.pets.values())
+        .filter(pet => pet.clinicId === clinic.id).length;
+      
+      return {
+        ...clinic,
+        userCount,
+        petCount,
+        status: 'ACTIVE',
+      };
+    });
+  }
+
+  async updateClinic(clinicId: string, updates: any): Promise<any> {
+    const clinic = this.clinics.get(clinicId);
+    if (!clinic) throw new Error('Clinic not found');
+
+    const updatedClinic = { ...clinic, ...updates, updatedAt: new Date() };
+    this.clinics.set(clinicId, updatedClinic);
+    return updatedClinic;
+  }
+
+  async getSystemLogs(): Promise<any[]> {
+    // Mock system logs
+    return [
+      {
+        id: '1',
+        level: 'INFO',
+        message: 'User login successful',
+        timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+        details: 'User admin@vettrack.pro logged in successfully',
+      },
+      {
+        id: '2',
+        level: 'INFO',
+        message: 'System startup completed',
+        timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        details: 'All services initialized successfully',
+      },
+      {
+        id: '3',
+        level: 'WARN',
+        message: 'High memory usage detected',
+        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        details: 'Memory usage at 85%, consider optimization',
+      },
+    ];
+  }
+
+  async createSystemBackup(): Promise<any> {
+    const backupId = randomUUID();
+    return {
+      id: backupId,
+      created: new Date(),
+      size: '2.5MB',
+      status: 'COMPLETED',
+    };
+  }
+
+  async restoreSystemBackup(backupId: string): Promise<any> {
+    return {
+      id: backupId,
+      restored: new Date(),
+      status: 'COMPLETED',
+    };
+  }
+
+  async updateSystemSettings(settings: any): Promise<any> {
+    // In a real implementation, this would save to database or file
+    return settings;
+  }
+
+  async getSystemSettings(): Promise<any> {
+    return {
+      siteName: 'VetTrack Pro',
+      systemEmail: 'system@vettrack.pro',
+      maintenanceMode: false,
+      sessionTimeout: 60,
+      maxLoginAttempts: 5,
+      twoFactorRequired: false,
+    };
   }
 }
 

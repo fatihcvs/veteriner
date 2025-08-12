@@ -1,0 +1,641 @@
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { 
+  Shield, Users, Building, Settings, BarChart3, Database, 
+  FileText, Bell, Package, Calendar, Stethoscope, CreditCard,
+  Activity, AlertTriangle, TrendingUp, Download, Edit3, Trash2
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import LoadingSpinner from '@/components/common/loading-spinner';
+
+interface AdminStats {
+  totalUsers: number;
+  totalClinics: number;
+  totalPets: number;
+  totalAppointments: number;
+  totalOrders: number;
+  totalRevenue: number;
+  activeUsers: number;
+  systemHealth: string;
+}
+
+interface SystemUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  clinicId?: string;
+  clinicName?: string;
+  createdAt: string;
+  lastLoginAt?: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+}
+
+interface SystemClinic {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  userCount: number;
+  petCount: number;
+  createdAt: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export default function AdminPanel() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
+  const [selectedClinic, setSelectedClinic] = useState<SystemClinic | null>(null);
+
+  // Check admin access
+  if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'CLINIC_ADMIN')) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-12 text-center">
+            <Shield className="h-16 w-16 mx-auto text-red-500 mb-4" />
+            <h3 className="text-lg font-medium text-slate-800 mb-2">
+              Erişim Yetkisi Yok
+            </h3>
+            <p className="text-professional-gray">
+              Bu sayfaya erişim için admin yetkisi gereklidir.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { data: adminStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/admin/stats'],
+  });
+
+  const { data: allUsers, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/admin/users'],
+  });
+
+  const { data: allClinics, isLoading: clinicsLoading } = useQuery({
+    queryKey: ['/api/admin/clinics'],
+  });
+
+  const { data: systemLogs } = useQuery({
+    queryKey: ['/api/admin/logs'],
+  });
+
+  // User management mutations
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: { userId: string; updates: any }) => {
+      return await apiRequest('PUT', `/api/admin/users/${data.userId}`, data.updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: "Kullanıcı güncellendi" });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await apiRequest('DELETE', `/api/admin/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: "Kullanıcı silindi" });
+    },
+  });
+
+  // Clinic management mutations
+  const updateClinicMutation = useMutation({
+    mutationFn: async (data: { clinicId: string; updates: any }) => {
+      return await apiRequest('PUT', `/api/admin/clinics/${data.clinicId}`, data.updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/clinics'] });
+      toast({ title: "Klinik güncellendi" });
+    },
+  });
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'SUPER_ADMIN': return 'bg-purple-100 text-purple-800';
+      case 'CLINIC_ADMIN': return 'bg-blue-100 text-blue-800';
+      case 'VET': return 'bg-green-100 text-green-800';
+      case 'STAFF': return 'bg-gray-100 text-gray-800';
+      case 'PET_OWNER': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'SUPER_ADMIN': return 'Süper Admin';
+      case 'CLINIC_ADMIN': return 'Klinik Yöneticisi';
+      case 'VET': return 'Veteriner';
+      case 'STAFF': return 'Personel';
+      case 'PET_OWNER': return 'Hayvan Sahibi';
+      default: return role;
+    }
+  };
+
+  if (statsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Admin Paneli</h1>
+          <p className="text-professional-gray">Sistem yönetimi ve kontrol merkezi</p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Sistem Raporu
+          </Button>
+          
+          <Button
+            className="bg-medical-blue hover:bg-medical-blue/90"
+            data-testid="button-system-settings"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Sistem Ayarları
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-professional-gray">Toplam Kullanıcı</p>
+                <p className="text-2xl font-bold text-slate-800">{adminStats?.totalUsers || 0}</p>
+              </div>
+              <Users className="h-8 w-8 text-medical-blue" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-professional-gray">Aktif Klinik</p>
+                <p className="text-2xl font-bold text-slate-800">{adminStats?.totalClinics || 0}</p>
+              </div>
+              <Building className="h-8 w-8 text-healthcare-green" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-professional-gray">Toplam Hayvan</p>
+                <p className="text-2xl font-bold text-slate-800">{adminStats?.totalPets || 0}</p>
+              </div>
+              <Stethoscope className="h-8 w-8 text-action-teal" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-professional-gray">Sistem Durumu</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-green-700">Çevrimiçi</span>
+                </div>
+              </div>
+              <Activity className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Admin Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
+          <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
+          <TabsTrigger value="clinics">Klinikler</TabsTrigger>
+          <TabsTrigger value="content">İçerik</TabsTrigger>
+          <TabsTrigger value="system">Sistem</TabsTrigger>
+          <TabsTrigger value="logs">Loglar</TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Son Aktiviteler
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-2 w-2 bg-green-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium">Yeni kullanıcı kaydı</p>
+                      <p className="text-xs text-professional-gray">2 dakika önce</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="h-2 w-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium">Sistem güncellemesi</p>
+                      <p className="text-xs text-professional-gray">1 saat önce</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="h-2 w-2 bg-yellow-500 rounded-full mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium">Bakım modu aktif</p>
+                      <p className="text-xs text-professional-gray">3 saat önce</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* System Health */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Sistem Performansı
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>CPU Kullanımı</span>
+                      <span>45%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Bellek Kullanımı</span>
+                      <span>67%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-yellow-500 h-2 rounded-full" style={{ width: '67%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Disk Kullanımı</span>
+                      <span>23%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '23%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Users Tab */}
+        <TabsContent value="users" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Tüm Kullanıcılar ({(allUsers || []).length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <LoadingSpinner />
+              ) : (
+                <div className="space-y-4">
+                  {(allUsers || []).map((user: SystemUser) => (
+                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium">{user.firstName} {user.lastName}</p>
+                          <p className="text-sm text-professional-gray">{user.email}</p>
+                          {user.clinicName && (
+                            <p className="text-xs text-professional-gray">Klinik: {user.clinicName}</p>
+                          )}
+                        </div>
+                        <Badge className={getRoleColor(user.role)}>
+                          {getRoleLabel(user.role)}
+                        </Badge>
+                        <Badge className={user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {user.status === 'ACTIVE' ? 'Aktif' : 'Pasif'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedUser(user)}
+                        >
+                          <Edit3 className="h-4 w-4 mr-1" />
+                          Düzenle
+                        </Button>
+                        
+                        {user.role !== 'SUPER_ADMIN' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => deleteUserMutation.mutate(user.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Sil
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Clinics Tab */}
+        <TabsContent value="clinics" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Tüm Klinikler ({(allClinics || []).length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {clinicsLoading ? (
+                <LoadingSpinner />
+              ) : (
+                <div className="space-y-4">
+                  {(allClinics || []).map((clinic: SystemClinic) => (
+                    <div key={clinic.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div>
+                          <p className="font-medium">{clinic.name}</p>
+                          <p className="text-sm text-professional-gray">{clinic.email}</p>
+                          <p className="text-xs text-professional-gray">{clinic.address}</p>
+                          <div className="flex gap-4 text-xs text-professional-gray mt-1">
+                            <span>{clinic.userCount} kullanıcı</span>
+                            <span>{clinic.petCount} hayvan</span>
+                          </div>
+                        </div>
+                        <Badge className={clinic.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {clinic.status === 'ACTIVE' ? 'Aktif' : 'Pasif'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedClinic(clinic)}
+                        >
+                          <Edit3 className="h-4 w-4 mr-1" />
+                          Düzenle
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Content Management Tab */}
+        <TabsContent value="content" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6 text-center">
+                <Package className="h-12 w-12 mx-auto text-medical-blue mb-4" />
+                <h3 className="font-medium mb-2">Ürün Yönetimi</h3>
+                <p className="text-sm text-professional-gray">E-ticaret ürünlerini yönet</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6 text-center">
+                <Bell className="h-12 w-12 mx-auto text-medical-blue mb-4" />
+                <h3 className="font-medium mb-2">Bildirim Şablonları</h3>
+                <p className="text-sm text-professional-gray">Otomatik mesaj şablonları</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardContent className="p-6 text-center">
+                <FileText className="h-12 w-12 mx-auto text-medical-blue mb-4" />
+                <h3 className="font-medium mb-2">Rapor Şablonları</h3>
+                <p className="text-sm text-professional-gray">PDF rapor düzenle</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* System Settings Tab */}
+        <TabsContent value="system" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Genel Ayarlar</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Site Adı</label>
+                  <Input defaultValue="VetTrack Pro" className="mt-1" />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Sistem E-postası</label>
+                  <Input defaultValue="system@vettrack.pro" className="mt-1" />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Bakım Modu</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="checkbox" />
+                    <span className="text-sm">Aktif</span>
+                  </div>
+                </div>
+                
+                <Button className="w-full">Ayarları Kaydet</Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Güvenlik Ayarları</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Oturum Süresi (dakika)</label>
+                  <Input defaultValue="60" type="number" className="mt-1" />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Maksimum Giriş Denemesi</label>
+                  <Input defaultValue="5" type="number" className="mt-1" />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">İki Faktörlü Doğrulama</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="checkbox" />
+                    <span className="text-sm">Zorunlu</span>
+                  </div>
+                </div>
+                
+                <Button className="w-full">Güvenlik Ayarlarını Kaydet</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* System Logs Tab */}
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Sistem Logları
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {(systemLogs || []).map((log: any, index: number) => (
+                  <div key={index} className="flex items-start gap-3 p-2 text-sm border-b">
+                    <div className={`h-2 w-2 rounded-full mt-2 ${
+                      log.level === 'ERROR' ? 'bg-red-500' :
+                      log.level === 'WARN' ? 'bg-yellow-500' :
+                      'bg-green-500'
+                    }`}></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <span className="font-mono">{log.message}</span>
+                        <span className="text-professional-gray">{log.timestamp}</span>
+                      </div>
+                      {log.details && (
+                        <p className="text-professional-gray mt-1">{log.details}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit User Dialog */}
+      {selectedUser && (
+        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Kullanıcı Düzenle</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Ad</label>
+                  <Input defaultValue={selectedUser.firstName} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Soyad</label>
+                  <Input defaultValue={selectedUser.lastName} />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">E-posta</label>
+                <Input defaultValue={selectedUser.email} />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Rol</label>
+                <select 
+                  defaultValue={selectedUser.role}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="SUPER_ADMIN">Süper Admin</option>
+                  <option value="CLINIC_ADMIN">Klinik Yöneticisi</option>
+                  <option value="VET">Veteriner</option>
+                  <option value="STAFF">Personel</option>
+                  <option value="PET_OWNER">Hayvan Sahibi</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Durum</label>
+                <select 
+                  defaultValue={selectedUser.status}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="ACTIVE">Aktif</option>
+                  <option value="INACTIVE">Pasif</option>
+                  <option value="SUSPENDED">Askıya Alındı</option>
+                </select>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => setSelectedUser(null)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  onClick={() => {
+                    // Update user logic here
+                    setSelectedUser(null);
+                  }}
+                  className="flex-1"
+                >
+                  Kaydet
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}

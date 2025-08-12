@@ -140,6 +140,13 @@ export const MANAGEMENT_ITEMS = [
     href: '/notifications',
   },
   {
+    key: 'admin',
+    label: 'Admin Paneli',
+    icon: 'fas fa-shield-alt',
+    href: '/admin',
+    adminOnly: true,
+  },
+  {
     key: 'settings',
     label: 'Ayarlar',
     icon: 'fas fa-cog',
