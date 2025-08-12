@@ -1,0 +1,249 @@
+Replit Agent Prompt (WhatsApp-first, copy–paste)
+Role: You are a senior full-stack engineer. Build a production-ready SaaS web app for veterinarians that combines:
+
+a pet shop (e-commerce),
+
+a membership/organization system for clinics, and
+
+a digital pet health record (“digital vaccination card”) with automated WhatsApp reminders.
+
+Name the project VetTrack Pro.
+
+Tech Stack (use these unless a strong reason not to)
+Frontend: Next.js 14 (App Router, TypeScript), Tailwind CSS, shadcn/ui, React Hook Form + Zod, TanStack Query.
+
+Backend: Next.js API routes (Server Actions where helpful) + Prisma ORM.
+
+DB: PostgreSQL (Neon for hosted dev).
+
+Background jobs & scheduling: BullMQ + Upstash Redis (delayed & repeatable jobs).
+
+Auth & RBAC: NextAuth (Credentials + Email magic link). Roles: SUPER_ADMIN, CLINIC_ADMIN, VET, STAFF, PET_OWNER. Multi-tenant via Clinic.
+
+Payments: Stripe; keep a provider interface to add iyzico later.
+
+Email (fallback): Resend (or SendGrid).
+
+Push (fallback): Web Push (VAPID) + in-app notification center.
+
+Files/Images: UploadThing or S3-compatible storage.
+
+PDF/QR: pdf-lib (or Puppeteer) + qrcode.
+
+i18n: next-intl with English and Turkish locales.
+
+WhatsApp Integration (MUST)
+Primary channel for all system notifications is WhatsApp. Implement a provider abstraction WhatsAppProvider with two interchangeable drivers:
+
+Meta WhatsApp Business Cloud API (preferred).
+
+Twilio WhatsApp (fallback driver).
+
+Add a message templating layer with variable interpolation and i18n (EN/TR). Store templates in code (keys) and render to provider-specific payloads.
+
+Implement delivery status tracking and webhooks:
+
+/api/webhooks/whatsapp for inbound messages and status callbacks (delivered, read, failed).
+
+Persist all events to a log table and link to originating Notification record.
+
+User opt-in & compliance:
+
+Store explicit WhatsApp opt-in per user; show consent UI in onboarding and in profile.
+
+Allow STOP (opt-out) via inbound WhatsApp message; update preferences automatically.
+
+Interactive flows: Support quick-reply buttons where available (e.g., “Confirm”, “Snooze 7d”, “Stop”). For providers without buttons, parse text commands:
+
+CONFIRM marks reminder as acknowledged.
+
+SNOOZE <days> reschedules the job.
+
+STOP opts out of WhatsApp channel.
+
+Fallback policy: If WhatsApp fails (provider error or user opted out), fall back to Email → Push → In-App (in that order). Log the fallback path.
+
+Core Domain & Data Model (Prisma)
+Add/extend entities accordingly (include indexes for frequent queries):
+
+User: id, name, email, phone, whatsappPhone (E.164), whatsappOptIn (bool), locale, role, verifiedAt.
+
+Clinic: id, name, address, phone, timeZone, locale, logoUrl, ownerUserId, whatsappBusinessNumber (masked), whatsappProvider (META|TWILIO), whatsappSenderId/PhoneNumberId.
+
+ClinicMember: id, clinicId, userId, role.
+
+PetOwnerProfile: id, userId, defaultClinicId, address.
+
+Pet: id, clinicId, ownerId, name, species, breed, sex, birthDate, weightKg, microchipNo, avatarUrl.
+
+MedicalRecord: id, petId, type (VACCINATION|DEWORMING|CHECKUP), notes, createdByUserId, attachments[].
+
+Vaccine: id, name, species, defaultIntervalDays, manufacturer, description.
+
+VaccinationEvent: id, petId, vaccineId, lotNo, administeredAt, dueAt, vetUserId, certificateNo, nextDueAt, status (SCHEDULED|DONE|OVERDUE).
+
+FoodProduct: id, name, brand, packageSizeGrams, species, sku, price, stockQty, description, images[].
+
+FeedingPlan: id, petId, dailyGramsRecommended, foodProductId, startDate, packageSizeGrams, expectedDepletionDate, active.
+
+Cart/CartItem, Order/OrderItem: standard fields (include payment + fulfillment meta).
+
+Notification: id, userId, clinicId?, type, title, body, channels (WHATSAPP|EMAIL|PUSH|IN_APP), scheduledFor, sentAt, status, meta JSON.
+
+WhatsAppMessageLog: id, notificationId, userId, provider (META|TWILIO), templateKey, to, from, payload JSON, providerMessageId, status, errorMessage, createdAt, updatedAt.
+
+JobAudit: id, key, payload, scheduledFor, status, runAt, error.
+
+Reminder & Rules Engine (must implement, WhatsApp-first)
+Vaccination reminders
+
+On recording (administeredAt), compute nextDueAt = administeredAt + defaultIntervalDays.
+
+Schedule WhatsApp notifications at −7 days, −1 day, 0 (due date), and +7 days if still OVERDUE.
+
+Recipients: pet owner and clinic staff with reminder permissions.
+
+Include Confirm and Snooze 7d actions (buttons or text commands).
+
+Food depletion reminders
+
+expectedDepletionDate = startDate + floor(packageSizeGrams / dailyGramsRecommended).
+
+Schedule WhatsApp reminders at −7 days and −1 day before depletion.
+
+If dailyGramsRecommended or product changes, recompute and reschedule.
+
+Message content (examples, implement i18n keys):
+
+reminder.vaccine.en:
+“{petName} is due for {vaccineName} on {dueDate}. Tap to confirm appointment or snooze.”
+
+reminder.food.en:
+“{petName}’s food may run out around {date}. Recommended {dailyGrams} g/day. Need to order more?”
+
+Provide Turkish equivalents under reminder.vaccine.tr, reminder.food.tr.
+
+E-commerce Requirements
+Product catalog (Food, Medicine, Accessories) + variants (size/weight).
+
+Inventory decrement on paid order; restock on refund/cancel.
+
+Cart + Checkout with Stripe payment intents.
+
+Clinic-scoped products vs global catalog.
+
+Discount codes (percent) and tax placeholder.
+
+Orders list/detail, fulfillment statuses, invoice PDFs.
+
+WhatsApp order messages: send order confirmation, shipped, delivered updates to customer; include short links to order detail.
+
+Digital Vaccination Card (“Yapay Karne”)
+For each pet, render a printable PDF vaccination card (clinic logo, pet details, microchip, vaccine history).
+
+Include a QR code to a public read-only verification page (pet initials + masked microchip).
+
+One-click “Record vaccine” flow with auto-suggested nextDueAt based on species & clinic policy; allow manual override.
+
+Offer a “Send to owner via WhatsApp” button to share the PDF link.
+
+RBAC & Multi-Tenancy
+Users can belong to multiple clinics via ClinicMember.
+
+Owners see only their pets & orders; clinic staff see clinic data.
+
+Super Admin dashboard for clinics & plans (basic/pro).
+
+UI/UX (pages & components)
+Public: Home, About, Shop, Product detail, Cart, Checkout, Sign in/up, Verify email.
+
+Owner Dashboard: Pets list, Pet detail (medical timeline, vaccination calendar, feeding plan), Orders, Reminders, Notification Preferences (WhatsApp opt-in).
+
+Clinic Dashboard: Today (due/overdue vaccinations, upcoming food depletion, low stock), Pets, Owners, Vaccinations, Feeding Plans, Orders, Products, Staff, Settings → WhatsApp Settings (provider, sender, test message).
+
+Forms: Pet CRUD, Record Vaccination, Start Feeding Plan (calculator for days left), Product CRUD, Clinic CRUD, Invite Staff.
+
+Notifications Center: filter by type/status/channel; show WhatsApp delivery/read receipts.
+
+Localization toggle (EN/TR); mobile-first; dark mode; WCAG AA.
+
+Notifications & Messaging (implementation details)
+Central notify() service:
+
+Input: userId|userPhone, templateKey, vars, preferredChannelOrder (default ['WHATSAPP','EMAIL','PUSH','IN_APP']), scheduledFor?.
+
+Chooses provider, renders template, persists Notification, enqueues BullMQ job, writes WhatsAppMessageLog.
+
+Provider drivers:
+
+Meta Cloud: Graph API calls for text/template messages; supports interactive buttons; handle statuses via webhook (message status, delivery, read).
+
+Twilio: WhatsApp send/receive via Messaging API; parse inbound text for commands.
+
+Webhook security: verify signatures; rate limit; idempotent processing.
+
+Rescheduling logic: On SNOOZE, update job timing; on CONFIRM, mark reminder acknowledged and cancel future occurrences.
+
+Developer Experience & Deliverables
+Clean monorepo structure (@/server, @/components, @/lib).
+
+Prisma schema + migrations complete.
+
+Seed script: Super Admin, sample Clinic (with WhatsApp config placeholders), 2 Vets, 1 Owner (opt-in WhatsApp), 2 Pets, 5 Vaccines, 6 Products, 3 FeedingPlans, and scheduled jobs.
+
+README with:
+
+Setup steps for Meta WhatsApp Cloud (app creation, phone number id, token, webhook setup) and Twilio WhatsApp sandbox as fallback.
+
+How to run queues & web.
+
+Template keys and example message bodies (EN/TR) to register/approve for outbound notifications.
+
+API docs (typed routes/OpenAPI) for core ops (create pet, record vaccination, start feeding plan, list due reminders).
+
+Tests: unit tests for date calculations, RBAC guards, order totals, and WhatsApp provider dispatch/fallback.
+
+Security: input validation (Zod), CSRF protection, auth rate limiting, audit logs for medical edits.
+
+PWA basics; in-app inbox; toast when WhatsApp is sent (with status).
+
+Business Logic Details (must follow)
+Vaccination: set status=DONE, compute nextDueAt; schedule WhatsApp at −7/−1/0/+7; allow confirm/snooze via WhatsApp; record outcomes.
+
+Feeding: compute expectedDepletionDate; schedule WhatsApp at −7/−1; recompute/reschedule on edits.
+
+Time zones: compute schedules using Clinic.timeZone.
+
+Inventory: decrement on paid order; low-stock alerts visible on clinic dashboard (also notify clinic via WhatsApp if enabled).
+
+Nice-to-Have
+CSV import for pets/records.
+
+Stripe subscriptions for clinics (plan limits on staff and monthly WhatsApp quota).
+
+Product reviews with moderation.
+
+Simple analytics (Recharts): due vaccines, sales, message delivery rates.
+
+Acceptance Criteria
+I can sign up, create a clinic, invite staff, add a pet, record a vaccination, generate a PDF vaccination card with QR, and receive all due-date reminders via WhatsApp (owner + clinic), with delivery/read statuses recorded.
+
+I can start a feeding plan, see the computed depletion date, and receive WhatsApp reminders before depletion; snoozing/confirming via WhatsApp updates schedules.
+
+I can browse products, checkout with Stripe test keys, and receive order status updates via WhatsApp.
+
+I can toggle EN/TR and manage WhatsApp opt-in in preferences.
+
+There is a queue dashboard endpoint (JSON) showing scheduled jobs and last runs.
+
+README provides WhatsApp setup steps (Meta Cloud + Twilio fallback) and webhook configuration.
+
+Build now. When done, print:
+
+the repo file tree,
+
+the local URLs for web & worker,
+
+seed user credentials,
+
+a short “next steps” guide.
