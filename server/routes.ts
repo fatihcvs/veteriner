@@ -441,7 +441,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/orders', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const orders = await storage.getUserOrders(userId);
+      const user = await storage.getUser(userId);
+      
+      let orders;
+      if (user?.role === 'SUPER_ADMIN') {
+        // Super admin can see all orders
+        orders = await storage.getAllOrders();
+      } else {
+        // Regular users see only their orders
+        orders = await storage.getUserOrders(userId);
+      }
+      
       res.json(orders);
     } catch (error) {
       console.error("Error fetching orders:", error);

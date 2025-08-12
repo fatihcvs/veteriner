@@ -92,6 +92,7 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   getOrder(id: string): Promise<any | undefined>;
   getUserOrders(userId: string): Promise<any[]>;
+  getAllOrders(): Promise<any[]>;
   updateOrderStatus(id: string, status: string): Promise<void>;
   
   // Appointment operations
@@ -606,6 +607,126 @@ export class MemStorage implements IStorage {
     sampleProfiles.forEach(profile => {
       this.petOwnerProfiles.set(profile.id, profile);
     });
+
+    // Create sample appointments
+    const sampleAppointments = [
+      {
+        id: randomUUID(),
+        petId: samplePets[0].id, // Karabaş
+        clinicId: 'admin-clinic-id',
+        vetUserId: 'admin-user-id',
+        appointmentDate: new Date('2025-08-15T10:00:00'),
+        duration: 30,
+        purpose: 'Aşı kontrolü',
+        notes: 'Yıllık aşı kontrolü için',
+        status: 'SCHEDULED',
+        createdBy: 'user1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        petId: samplePets[1].id, // Pamuk
+        clinicId: 'admin-clinic-id',
+        vetUserId: 'admin-user-id',
+        appointmentDate: new Date('2025-08-13T14:30:00'),
+        duration: 45,
+        purpose: 'Genel muayene',
+        notes: 'Kilo kontrolü ve genel sağlık muayenesi',
+        status: 'COMPLETED',
+        createdBy: 'user1',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        petId: samplePets[2].id, // Bruno
+        clinicId: 'admin-clinic-id',
+        vetUserId: 'admin-user-id',
+        appointmentDate: new Date('2025-08-14T09:15:00'),
+        duration: 60,
+        purpose: 'Diş kontrolü',
+        notes: 'Diş taşı temizliği gerekli',
+        status: 'SCHEDULED',
+        createdBy: 'user2',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    // Add sample appointments to storage
+    sampleAppointments.forEach(appointment => {
+      this.appointments.set(appointment.id, appointment);
+    });
+
+    // Create sample orders
+    const sampleOrders = [
+      {
+        id: randomUUID(),
+        userId: 'user1',
+        totalAmount: '450.00',
+        shippingAddress: 'Bağdat Caddesi No:123, Kadıköy, İstanbul',
+        status: 'DELIVERED',
+        createdAt: new Date('2025-08-10T12:00:00'),
+        updatedAt: new Date('2025-08-11T16:30:00'),
+      },
+      {
+        id: randomUUID(),
+        userId: 'user2',
+        totalAmount: '1275.00',
+        shippingAddress: 'Nispetiye Caddesi No:456, Levent, İstanbul',
+        status: 'PENDING',
+        createdAt: new Date('2025-08-12T14:20:00'),
+        updatedAt: new Date('2025-08-12T14:20:00'),
+      },
+      {
+        id: randomUUID(),
+        userId: 'user3',
+        totalAmount: '180.00',
+        shippingAddress: 'Atatürk Bulvarı No:789, Çankaya, Ankara',
+        status: 'SHIPPED',
+        createdAt: new Date('2025-08-11T09:45:00'),
+        updatedAt: new Date('2025-08-12T10:15:00'),
+      },
+    ];
+
+    // Add sample orders to storage
+    sampleOrders.forEach(order => {
+      this.orders.set(order.id, order);
+    });
+
+    // Create sample vaccination events
+    const sampleVaccinations = [
+      {
+        id: randomUUID(),
+        petId: samplePets[0].id, // Karabaş
+        vaccineId: Array.from(this.vaccines.values())[0].id, // Rabies Vaccine
+        vetUserId: 'admin-user-id',
+        administeredAt: new Date('2024-08-15'),
+        nextDueAt: new Date('2025-08-15'),
+        lotNo: 'RAB2024001',
+        status: 'DONE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        petId: samplePets[2].id, // Bruno
+        vaccineId: Array.from(this.vaccines.values())[1].id, // DHPP Vaccine
+        vetUserId: 'admin-user-id',
+        administeredAt: new Date('2024-03-20'),
+        nextDueAt: new Date('2025-03-20'),
+        lotNo: 'DHPP2024005',
+        status: 'DONE',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    // Add sample vaccinations to storage
+    sampleVaccinations.forEach(vaccination => {
+      this.vaccinationEvents.set(vaccination.id, vaccination);
+    });
   }
 
   // User operations
@@ -859,6 +980,18 @@ export class MemStorage implements IStorage {
 
   async getUserOrders(userId: string): Promise<any[]> {
     return Array.from(this.orders.values()).filter(order => order.userId === userId);
+  }
+
+  async getAllOrders(): Promise<any[]> {
+    return Array.from(this.orders.values()).map(order => {
+      const user = this.users.get(order.userId);
+      return {
+        ...order,
+        customerName: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
+        customerEmail: user?.email || '',
+        customerPhone: user?.phone || ''
+      };
+    });
   }
 
   async updateOrderStatus(id: string, status: string): Promise<void> {
