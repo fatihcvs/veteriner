@@ -132,9 +132,16 @@ export const vaccinationEvents = pgTable("vaccination_events", {
 export const medicalRecords = pgTable("medical_records", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   petId: uuid("pet_id").references(() => pets.id).notNull(),
-  type: varchar("type").notNull(), // VACCINATION, DEWORMING, CHECKUP, SURGERY
-  notes: text("notes"),
-  createdByUserId: varchar("created_by_user_id").references(() => users.id).notNull(),
+  type: varchar("type").notNull(), // EXAMINATION, SURGERY, VACCINATION, LABORATORY, EMERGENCY
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  diagnosis: text("diagnosis"),
+  treatment: text("treatment"),
+  prescription: text("prescription"),
+  visitDate: timestamp("visit_date").notNull(),
+  nextVisitDate: timestamp("next_visit_date"),
+  status: varchar("status").notNull().default('ACTIVE'), // ACTIVE, COMPLETED, CANCELLED
+  vetUserId: varchar("vet_user_id").references(() => users.id).notNull(),
   attachments: jsonb("attachments").default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -302,6 +309,9 @@ export type Appointment = typeof appointments.$inferSelect;
 export type InsertPetOwnerProfile = typeof petOwnerProfiles.$inferInsert;
 export type PetOwnerProfile = typeof petOwnerProfiles.$inferSelect;
 
+export type InsertMedicalRecord = typeof medicalRecords.$inferInsert;
+export type MedicalRecord = typeof medicalRecords.$inferSelect;
+
 // Zod schemas
 export const insertPetSchema = createInsertSchema(pets).omit({
   id: true,
@@ -335,6 +345,12 @@ export const insertFeedingPlanSchema = createInsertSchema(feedingPlans).omit({
 });
 
 export const insertFoodProductSchema = createInsertSchema(foodProducts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMedicalRecordSchema = createInsertSchema(medicalRecords).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -397,3 +413,4 @@ export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export type UpdatePetOwnerProfile = z.infer<typeof updatePetOwnerProfileSchema>;
+export type InsertMedicalRecordForm = z.infer<typeof insertMedicalRecordSchema>;

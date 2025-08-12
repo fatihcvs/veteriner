@@ -1547,10 +1547,52 @@ export class DatabaseStorage implements IStorage {
   async createFeedingPlan(data: any): Promise<any> { throw new Error('Not implemented'); }
   async updateFeedingPlan(id: string, updates: any): Promise<any> { throw new Error('Not implemented'); }
   async deleteFeedingPlan(id: string): Promise<void> {}
-  async getPetMedicalRecords(petId: string): Promise<any[]> { return []; }
-  async createMedicalRecord(data: any): Promise<any> { throw new Error('Not implemented'); }
-  async updateMedicalRecord(id: string, updates: any): Promise<any> { throw new Error('Not implemented'); }
-  async deleteMedicalRecord(id: string): Promise<void> {}
+  async getMedicalRecords(userId?: string): Promise<MedicalRecord[]> {
+    const allRecords = this.medicalRecords;
+    if (!userId) return allRecords;
+    
+    // Get user's pets
+    const userPets = this.pets.filter(pet => pet.ownerId === userId);
+    const userPetIds = userPets.map(pet => pet.id);
+    
+    return allRecords.filter(record => userPetIds.includes(record.petId));
+  }
+  
+  async getPetMedicalRecords(petId: string): Promise<MedicalRecord[]> {
+    return this.medicalRecords.filter(record => record.petId === petId);
+  }
+  
+  async createMedicalRecord(data: InsertMedicalRecord): Promise<MedicalRecord> {
+    const newRecord: MedicalRecord = {
+      id: nanoid(),
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    this.medicalRecords.push(newRecord);
+    return newRecord;
+  }
+  
+  async updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord> {
+    const index = this.medicalRecords.findIndex(record => record.id === id);
+    if (index === -1) throw new Error('Medical record not found');
+    
+    this.medicalRecords[index] = {
+      ...this.medicalRecords[index],
+      ...updates,
+      updatedAt: new Date(),
+    };
+    
+    return this.medicalRecords[index];
+  }
+  
+  async deleteMedicalRecord(id: string): Promise<void> {
+    const index = this.medicalRecords.findIndex(record => record.id === id);
+    if (index !== -1) {
+      this.medicalRecords.splice(index, 1);
+    }
+  }
 
   // Admin operations for DatabaseStorage
   async getAdminStats(): Promise<any> {
