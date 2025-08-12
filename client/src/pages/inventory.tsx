@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Package, Plus, Search, Filter, AlertTriangle, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react';
+import { Package, Plus, Search, Filter, AlertTriangle, TrendingUp, TrendingDown, BarChart3, Edit, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 interface InventoryItem {
   id: string;
@@ -29,18 +35,133 @@ interface InventoryItem {
   expiryDate?: string;
   lastRestocked?: string;
   status: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRED';
+  description?: string;
+  images?: string[];
 }
+
+const inventoryFormSchema = z.object({
+  name: z.string().min(1, 'Ürün adı zorunludur'),
+  brand: z.string().optional(),
+  category: z.enum(['FOOD', 'MEDICINE', 'EQUIPMENT', 'VACCINE', 'SUPPLEMENT']),
+  sku: z.string().min(1, 'SKU zorunludur'),
+  currentStock: z.number().min(0, 'Stok miktarı 0 veya daha büyük olmalı'),
+  minimumStock: z.number().min(0, 'Minimum stok 0 veya daha büyük olmalı'),
+  maximumStock: z.number().min(1, 'Maksimum stok 1 veya daha büyük olmalı'),
+  unit: z.string().min(1, 'Birim zorunludur'),
+  price: z.string().min(1, 'Fiyat zorunludur'),
+  supplier: z.string().optional(),
+  location: z.string().optional(),
+  description: z.string().optional(),
+});
+
+type InventoryFormData = z.infer<typeof inventoryFormSchema>;
 
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [activeTab, setActiveTab] = useState('all');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const { toast } = useToast();
 
-  const { data: inventoryItems, isLoading } = useQuery({
+  const form = useForm<InventoryFormData>({
+    resolver: zodResolver(inventoryFormSchema),
+    defaultValues: {
+      name: '',
+      brand: '',
+      category: 'FOOD',
+      sku: '',
+      currentStock: 0,
+      minimumStock: 10,
+      maximumStock: 100,
+      unit: 'adet',
+      price: '',
+      supplier: '',
+      location: 'Depo A',
+      description: '',
+    },
+  });
+
+  const { data: inventoryItems = [], isLoading } = useQuery<InventoryItem[]>({
     queryKey: ['/api/inventory'],
   });
+
+  const createItemMutation = useMutation({
+    mutationFn: async (data: InventoryFormData) => {
+      return await apiRequest('POST', '/api/inventory', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      setIsFormOpen(false);
+      form.reset();
+      toast({
+        title: 'Başarılı',
+        description: 'Envanter ürünü başarıyla eklendi.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Hata',
+        description: 'Envanter ürünü eklenirken hata oluştu.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InventoryFormData> }) => {
+      return await apiRequest('PUT', `/api/inventory/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      setEditingItem(null);
+      toast({
+        title: 'Başarılı',
+        description: 'Envanter ürünü başarıyla güncellendi.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Hata',
+        description: 'Envanter ürünü güncellenirken hata oluştu.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const onSubmit = (data: InventoryFormData) => {
+    if (editingItem) {
+      updateItemMutation.mutate({ id: editingItem.id, data });
+    } else {
+      createItemMutation.mutate(data);
+    }
+  };
+
+  const startEdit = (item: InventoryItem) => {
+    setEditingItem(item);
+    form.reset({
+      name: item.name,
+      brand: item.brand || '',
+      category: item.category,
+      sku: item.sku,
+      currentStock: item.currentStock,
+      minimumStock: item.minimumStock,
+      maximumStock: item.maximumStock,
+      unit: item.unit,
+      price: item.price,
+      supplier: item.supplier || '',
+      location: item.location || '',
+      description: item.description || '',
+    });
+    setIsFormOpen(true);
+  };
+
+  const cancelEdit = () => {
+    setEditingItem(null);
+    setIsFormOpen(false);
+    form.reset();
+  };
 
   const categories = {
     'FOOD': { label: 'Mama & Gıda', color: 'bg-green-100 text-green-800', icon: '🥘' },
@@ -126,13 +247,250 @@ export default function Inventory() {
             Raporlar
           </Button>
           
-          <Button
-            className="bg-medical-blue hover:bg-medical-blue/90"
-            data-testid="button-add-item"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ürün Ekle
-          </Button>
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-medical-blue hover:bg-medical-blue/90"
+                data-testid="button-add-item"
+                onClick={() => {
+                  setEditingItem(null);
+                  form.reset();
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Ürün Ekle
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingItem ? 'Envanter Ürünü Düzenle' : 'Yeni Envanter Ürünü Ekle'}
+                </DialogTitle>
+              </DialogHeader>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ürün Adı *</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-product-name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="brand"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marka</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-brand" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Kategori *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-category">
+                                <SelectValue placeholder="Kategori seçin" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(categories).map(([key, category]) => (
+                                <SelectItem key={key} value={key}>
+                                  {category.icon} {category.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="sku"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>SKU *</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-sku" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="currentStock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mevcut Stok *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={e => field.onChange(Number(e.target.value))}
+                              data-testid="input-current-stock"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="minimumStock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum Stok *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={e => field.onChange(Number(e.target.value))}
+                              data-testid="input-minimum-stock"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="maximumStock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maksimum Stok *</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={e => field.onChange(Number(e.target.value))}
+                              data-testid="input-maximum-stock"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="unit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Birim *</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-unit" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fiyat *</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-price" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="supplier"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tedarikçi</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-supplier" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Depo Konumu</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-location" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Açıklama</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} data-testid="textarea-description" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={cancelEdit}>
+                      <X className="h-4 w-4 mr-2" />
+                      İptal
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-medical-blue hover:bg-medical-blue/90"
+                      disabled={createItemMutation.isPending || updateItemMutation.isPending}
+                      data-testid="button-save-item"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {editingItem ? 'Güncelle' : 'Kaydet'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -309,10 +667,33 @@ export default function Inventory() {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => startEdit(item)}
+                      data-testid={`button-edit-${item.id}`}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
                       Düzenle
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => {
+                        // Quick stock add functionality
+                        const newStock = prompt('Eklenecek stok miktarı:', '10');
+                        if (newStock) {
+                          updateItemMutation.mutate({
+                            id: item.id,
+                            data: { currentStock: item.currentStock + parseInt(newStock) }
+                          });
+                        }
+                      }}
+                      data-testid={`button-add-stock-${item.id}`}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
                       Stok Ekle
                     </Button>
                   </div>
@@ -336,7 +717,14 @@ export default function Inventory() {
                 <p className="text-professional-gray mb-4">
                   İlk envanter ürününüzü eklemek için yukarıdaki butonu kullanın.
                 </p>
-                <Button className="bg-medical-blue hover:bg-medical-blue/90">
+                <Button 
+                  className="bg-medical-blue hover:bg-medical-blue/90"
+                  onClick={() => {
+                    setEditingItem(null);
+                    form.reset();
+                    setIsFormOpen(true);
+                  }}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   İlk Ürünü Ekle
                 </Button>

@@ -88,6 +88,11 @@ export interface IStorage {
   createFoodProduct(product: InsertFoodProduct): Promise<FoodProduct>;
   updateProductStock(productId: string, quantity: number): Promise<void>;
   
+  // Inventory operations
+  getInventoryItems(clinicId?: string): Promise<any[]>;
+  createInventoryItem(item: any): Promise<any>;
+  updateInventoryItem(id: string, updates: any): Promise<any>;
+  
   // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
   getOrder(id: string): Promise<any | undefined>;
@@ -960,6 +965,84 @@ export class MemStorage implements IStorage {
       product.updatedAt = new Date();
       this.foodProducts.set(productId, product);
     }
+  }
+  
+  async getInventoryItems(clinicId?: string): Promise<any[]> {
+    const products = await this.getFoodProducts(clinicId);
+    
+    return products.map(product => {
+      const currentStock = product.stockQty || 0;
+      const minimumStock = 10; // Default minimum stock
+      const maximumStock = 100; // Default maximum stock
+      
+      let status = 'IN_STOCK';
+      if (currentStock === 0) status = 'OUT_OF_STOCK';
+      else if (currentStock <= minimumStock) status = 'LOW_STOCK';
+      
+      return {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        category: 'FOOD', // Since these are food products
+        sku: product.sku || `SKU-${product.id.slice(0, 8)}`,
+        currentStock,
+        minimumStock,
+        maximumStock,
+        unit: product.packageSizeGrams ? 'gram' : 'adet',
+        price: product.price,
+        costPrice: (parseFloat(product.price) * 0.7).toFixed(2), // Estimated cost price
+        supplier: product.brand,
+        location: 'Depo A',
+        expiryDate: null, // Food products don't have expiry in current schema
+        lastRestocked: product.updatedAt?.toISOString().split('T')[0],
+        status,
+        description: product.description,
+        images: product.images || [],
+      };
+    });
+  }
+  
+  async createInventoryItem(itemData: any): Promise<any> {
+    // Convert inventory item to food product
+    const productData = {
+      name: itemData.name,
+      brand: itemData.brand,
+      packageSizeGrams: itemData.unit === 'gram' ? 1000 : null,
+      species: 'DOG', // Default
+      sku: itemData.sku,
+      price: itemData.price,
+      stockQty: itemData.currentStock,
+      description: itemData.description || '',
+      images: itemData.images || [],
+      clinicId: null,
+    };
+    
+    const product = await this.createFoodProduct(productData);
+    return this.getInventoryItems().then(items => 
+      items.find(item => item.id === product.id)
+    );
+  }
+  
+  async updateInventoryItem(id: string, updates: any): Promise<any> {
+    const product = this.foodProducts.get(id);
+    if (!product) throw new Error('Inventory item not found');
+    
+    // Update the food product with inventory data
+    const updatedProduct = {
+      ...product,
+      name: updates.name || product.name,
+      brand: updates.brand || product.brand,
+      price: updates.price || product.price,
+      stockQty: updates.currentStock !== undefined ? updates.currentStock : product.stockQty,
+      description: updates.description || product.description,
+      updatedAt: new Date(),
+    };
+    
+    this.foodProducts.set(id, updatedProduct);
+    
+    return this.getInventoryItems().then(items => 
+      items.find(item => item.id === id)
+    );
   }
 
   // Order operations

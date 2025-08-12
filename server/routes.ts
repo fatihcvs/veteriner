@@ -437,6 +437,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inventory management routes
+  app.get('/api/inventory', async (req, res) => {
+    try {
+      const inventory = await storage.getInventoryItems();
+      res.json(inventory);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      res.status(500).json({ message: "Failed to fetch inventory" });
+    }
+  });
+
+  app.post('/api/inventory', requireAuth, async (req: any, res) => {
+    try {
+      const inventoryItem = await storage.createInventoryItem(req.body);
+      res.status(201).json(inventoryItem);
+    } catch (error) {
+      console.error("Error creating inventory item:", error);
+      res.status(500).json({ message: "Failed to create inventory item" });
+    }
+  });
+
+  app.put('/api/inventory/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const inventoryItem = await storage.updateInventoryItem(id, req.body);
+      res.json(inventoryItem);
+    } catch (error) {
+      console.error("Error updating inventory item:", error);
+      res.status(500).json({ message: "Failed to update inventory item" });
+    }
+  });
+
   // Order routes
   app.get('/api/orders', requireAuth, async (req: any, res) => {
     try {
