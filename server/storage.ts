@@ -1320,6 +1320,15 @@ async function seedData() {
       }
     }
 
+    // Ensure all users except admin@vettrack.pro have PET_OWNER role
+    const allUsers = await storage.getAllUsers();
+    for (const user of allUsers) {
+      if (user.email !== 'admin@vettrack.pro' && user.role !== 'PET_OWNER') {
+        console.log(`Updating user ${user.email} role from ${user.role} to PET_OWNER`);
+        await storage.updateUserByAdmin(user.id, { role: 'PET_OWNER' });
+      }
+    }
+
     console.log('Database seeding completed successfully');
   } catch (error) {
     console.error('Error seeding data:', error);

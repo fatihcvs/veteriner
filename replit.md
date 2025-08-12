@@ -35,6 +35,8 @@ The system is designed as a multi-tenant application supporting different user r
 
 ### Role-Based Access Control (Pet Owner Focus)
 - **Default User Role**: New registrations automatically assigned PET_OWNER role instead of admin roles
+- **Admin Restriction**: Only admin@vettrack.pro has SUPER_ADMIN privileges, all other users default to PET_OWNER
+- **Automatic Role Correction**: Database seeding function ensures existing users get PET_OWNER role except admin@vettrack.pro
 - **Navigation Restrictions**: PET_OWNER users see only: "Hayvanlarım", "Randevularım", "Mağaza", "Siparişlerim", "Profilim", "Bildirimlerim"
 - **Dynamic Labels**: Navigation menu labels change based on user role (e.g., "Hayvanlarım" for pet owners vs "Hastalar" for clinic staff)
 - **Complete Appointment System**: Fully functional appointment booking with time slot selection, pet selection, and form validation
