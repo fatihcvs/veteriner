@@ -4,7 +4,7 @@ import { storage } from "./storage";
 export function setupAdminRoutes(app: Express) {
   // Middleware to check admin access
   const requireAdmin = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated() || !req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     
@@ -75,7 +75,7 @@ export function setupAdminRoutes(app: Express) {
   app.get("/api/admin/clinics", requireAdmin, async (req, res) => {
     try {
       const user = req.user;
-      if (user.role !== 'SUPER_ADMIN') {
+      if (!user || user.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ message: "Super admin access required" });
       }
       
@@ -91,7 +91,7 @@ export function setupAdminRoutes(app: Express) {
   app.put("/api/admin/clinics/:clinicId", requireAdmin, async (req, res) => {
     try {
       const user = req.user;
-      if (user.role !== 'SUPER_ADMIN') {
+      if (!user || user.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ message: "Super admin access required" });
       }
       
@@ -121,7 +121,7 @@ export function setupAdminRoutes(app: Express) {
   app.post("/api/admin/backup", requireAdmin, async (req, res) => {
     try {
       const user = req.user;
-      if (user.role !== 'SUPER_ADMIN') {
+      if (!user || user.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ message: "Super admin access required" });
       }
       
@@ -137,7 +137,7 @@ export function setupAdminRoutes(app: Express) {
   app.post("/api/admin/restore", requireAdmin, async (req, res) => {
     try {
       const user = req.user;
-      if (user.role !== 'SUPER_ADMIN') {
+      if (!user || user.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ message: "Super admin access required" });
       }
       

@@ -59,6 +59,13 @@ function AdminPanel() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<SystemClinic | null>(null);
+  const [editUserForm, setEditUserForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    role: '',
+    status: '',
+  });
 
   // Check admin access
   if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'CLINIC_ADMIN')) {
@@ -366,7 +373,16 @@ function AdminPanel() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setSelectedUser(user)}
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setEditUserForm({
+                              firstName: user.firstName,
+                              lastName: user.lastName,
+                              email: user.email,
+                              role: user.role,
+                              status: user.status,
+                            });
+                          }}
                         >
                           <Edit3 className="h-4 w-4 mr-1" />
                           Düzenle
@@ -575,23 +591,33 @@ function AdminPanel() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Ad</label>
-                  <Input defaultValue={selectedUser.firstName} />
+                  <Input 
+                    value={editUserForm.firstName}
+                    onChange={(e) => setEditUserForm(prev => ({...prev, firstName: e.target.value}))}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Soyad</label>
-                  <Input defaultValue={selectedUser.lastName} />
+                  <Input 
+                    value={editUserForm.lastName}
+                    onChange={(e) => setEditUserForm(prev => ({...prev, lastName: e.target.value}))}
+                  />
                 </div>
               </div>
               
               <div>
                 <label className="text-sm font-medium">E-posta</label>
-                <Input defaultValue={selectedUser.email} />
+                <Input 
+                  value={editUserForm.email}
+                  onChange={(e) => setEditUserForm(prev => ({...prev, email: e.target.value}))}
+                />
               </div>
               
               <div>
                 <label className="text-sm font-medium">Rol</label>
                 <select 
-                  defaultValue={selectedUser.role}
+                  value={editUserForm.role}
+                  onChange={(e) => setEditUserForm(prev => ({...prev, role: e.target.value}))}
                   className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="SUPER_ADMIN">Süper Admin</option>
@@ -605,7 +631,8 @@ function AdminPanel() {
               <div>
                 <label className="text-sm font-medium">Durum</label>
                 <select 
-                  defaultValue={selectedUser.status}
+                  value={editUserForm.status}
+                  onChange={(e) => setEditUserForm(prev => ({...prev, status: e.target.value}))}
                   className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
                 >
                   <option value="ACTIVE">Aktif</option>
@@ -624,12 +651,24 @@ function AdminPanel() {
                 </Button>
                 <Button 
                   onClick={() => {
-                    // Update user logic here
-                    setSelectedUser(null);
+                    if (selectedUser) {
+                      updateUserMutation.mutate({
+                        userId: selectedUser.id,
+                        updates: {
+                          firstName: editUserForm.firstName,
+                          lastName: editUserForm.lastName,
+                          email: editUserForm.email,
+                          role: editUserForm.role,
+                          status: editUserForm.status,
+                        }
+                      });
+                      setSelectedUser(null);
+                    }
                   }}
                   className="flex-1"
+                  disabled={updateUserMutation.isPending}
                 >
-                  Kaydet
+                  {updateUserMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
                 </Button>
               </div>
             </div>
