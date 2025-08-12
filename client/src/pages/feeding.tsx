@@ -64,6 +64,8 @@ export default function FeedingPage() {
   const form = useForm<FeedingFormData>({
     resolver: zodResolver(feedingFormSchema),
     defaultValues: {
+      petId: '',
+      foodProductId: '',
       petWeightKg: 10,
       packageSizeGrams: 3000,
       startDate: new Date().toISOString().split('T')[0],
@@ -123,9 +125,10 @@ export default function FeedingPage() {
       });
     },
     onError: (error) => {
+      console.error('Feeding plan creation error:', error);
       toast({
         title: 'Hata',
-        description: 'Mama takibi eklenirken hata oluştu.',
+        description: error.message || 'Mama takibi eklenirken hata oluştu.',
         variant: 'destructive',
       });
     },
@@ -146,6 +149,8 @@ export default function FeedingPage() {
   });
 
   const onSubmit = (data: FeedingFormData) => {
+    console.log('Form data being submitted:', data);
+    console.log('Form errors:', form.formState.errors);
     createFeedingPlan.mutate(data);
   };
 
