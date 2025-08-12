@@ -1,21 +1,31 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { Package, Truck, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { Package, Truck, CheckCircle, XCircle, Clock, Eye, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import { ORDER_STATUS } from '@/lib/constants';
 import { Order } from '@shared/schema';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Orders() {
   const [activeTab, setActiveTab] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const { data: orders, isLoading } = useQuery({
+  const { data: orders, isLoading, error } = useQuery({
     queryKey: ['/api/orders'],
+    retry: false,
   });
 
   const getStatusColor = (status: string) => {
@@ -57,11 +67,87 @@ export default function Orders() {
     return orders?.filter((order: Order) => order.status === status) || [];
   };
 
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      const response = await apiRequest('PATCH', `/api/orders/${orderId}`, { status });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: 'Sipariş Güncellendi',
+        description: 'Sipariş durumu başarıyla güncellendi.',
+      });
+      setIsDetailOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Güncelleme Hatası',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await apiRequest('PATCH', `/api/orders/${orderId}`, { status: 'CANCELLED' });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      toast({
+        title: 'Sipariş İptal Edildi',
+        description: 'Siparişiniz başarıyla iptal edildi.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'İptal Hatası',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleViewDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setIsDetailOpen(true);
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    cancelOrderMutation.mutate(orderId);
+  };
+
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'CLINIC_ADMIN';
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <div className="space-y-4">
+            <div className="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+              <XCircle className="text-red-600 h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                Siparişler yüklenemedi
+              </h3>
+              <p className="text-professional-gray">
+                Lütfen sayfayı yenileyip tekrar deneyin.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -216,13 +302,25 @@ export default function Orders() {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewDetails(order)}
+                          data-testid={`button-view-order-${order.id}`}
+                        >
                           <Eye className="h-3 w-3 mr-1" />
                           Detay
                         </Button>
                         
                         {order.status === 'PENDING' && (
-                          <Button variant="outline" size="sm" className="text-alert-red">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={cancelOrderMutation.isPending}
+                            data-testid={`button-cancel-order-${order.id}`}
+                          >
                             <XCircle className="h-3 w-3 mr-1" />
                             İptal Et
                           </Button>
@@ -253,6 +351,139 @@ export default function Orders() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Order Detail Modal */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Sipariş Detayı #{selectedOrder?.id.slice(-8)}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Order Header */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Sipariş Bilgileri</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-professional-gray">Sipariş No:</span>
+                      <span className="font-medium">#{selectedOrder.id.slice(-8)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-professional-gray">Tarih:</span>
+                      <span className="font-medium">
+                        {format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy HH:mm', { locale: tr })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-professional-gray">Durum:</span>
+                      <Badge className={getStatusColor(selectedOrder.status)}>
+                        {ORDER_STATUS[selectedOrder.status as keyof typeof ORDER_STATUS] || selectedOrder.status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-professional-gray">Toplam:</span>
+                      <span className="text-lg font-bold text-slate-800">
+                        ₺{parseFloat(selectedOrder.totalAmount).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Teslimat Bilgileri</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="text-sm text-professional-gray">Teslimat Adresi:</p>
+                      <p className="font-medium">
+                        {typeof selectedOrder.shippingAddress === 'string' 
+                          ? selectedOrder.shippingAddress 
+                          : JSON.stringify(selectedOrder.shippingAddress || {}).replace(/[{}"]/g, '').replace(/,/g, ', ')}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Order Items would go here if we had order items data */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Sipariş İçeriği</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-professional-gray text-sm">
+                    Sipariş detayları yükleniyor... (Bu özellik geliştirilme aşamasında)
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Admin Order Management */}
+              {isAdmin && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Sipariş Yönetimi</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="text-sm text-professional-gray">Sipariş Durumu:</label>
+                        <Select
+                          value={selectedOrder.status}
+                          onValueChange={(status) => updateOrderStatusMutation.mutate({ 
+                            orderId: selectedOrder.id, 
+                            status 
+                          })}
+                          disabled={updateOrderStatusMutation.isPending}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PENDING">Beklemede</SelectItem>
+                            <SelectItem value="PAID">Ödendi</SelectItem>
+                            <SelectItem value="SHIPPED">Kargoya Verildi</SelectItem>
+                            <SelectItem value="DELIVERED">Teslim Edildi</SelectItem>
+                            <SelectItem value="CANCELLED">İptal Edildi</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        disabled={updateOrderStatusMutation.isPending}
+                        className="mt-6"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        {updateOrderStatusMutation.isPending ? 'Güncelleniyor...' : 'Güncelle'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Notes */}
+              {selectedOrder.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Notlar</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm">{selectedOrder.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

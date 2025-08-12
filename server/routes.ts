@@ -540,6 +540,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/orders/:id', requireAuth, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!status) {
+        return res.status(400).json({ message: 'Status is required' });
+      }
+      
+      // Check if user has permission to update orders
+      if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'CLINIC_ADMIN')) {
+        // Regular users can only cancel their own pending orders
+        const order = await storage.getOrder(id);
+        if (!order || order.userId !== userId || order.status !== 'PENDING' || status !== 'CANCELLED') {
+          return res.status(403).json({ message: 'Unauthorized to update this order' });
+        }
+      }
+      
+      const updatedOrder = await storage.updateOrderStatus(id, status);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Send notification about status update
+      await notificationService.notify(
+        updatedOrder.userId,
+        'Sipariş Durumu Güncellendi',
+        `Siparişinizin (#${updatedOrder.id.slice(-6)}) durumu güncellendi: ${status}`,
+        {
+          channels: ['WHATSAPP', 'EMAIL'],
+          meta: {
+            type: 'order_update',
+            status: status,
+            orderNumber: updatedOrder.id.slice(-6),
+          }
+        }
+      );
+      
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ message: "Failed to update order" });
+    }
+  });
+
   // Appointment routes
   app.get('/api/appointments', requireAuth, async (req: any, res) => {
     try {
