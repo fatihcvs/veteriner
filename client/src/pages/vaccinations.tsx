@@ -20,15 +20,15 @@ export default function Vaccinations() {
   const [activeTab, setActiveTab] = useState('overdue');
   const { toast } = useToast();
 
-  const { data: overdueVaccinations, isLoading: overdueLoading } = useQuery({
+  const { data: overdueVaccinations = [], isLoading: overdueLoading } = useQuery({
     queryKey: ['/api/vaccinations/overdue'],
   });
 
-  const { data: vaccines } = useQuery({
+  const { data: vaccines = [] } = useQuery({
     queryKey: ['/api/vaccines'],
   });
 
-  const { data: pets } = useQuery({
+  const { data: pets = [] } = useQuery({
     queryKey: ['/api/pets'],
   });
 
@@ -45,15 +45,17 @@ export default function Vaccinations() {
       });
     },
     onError: (error) => {
+      console.error('Vaccination creation error:', error);
       toast({
         title: 'Hata',
-        description: 'Aşı kaydı oluşturulamadı.',
+        description: error.message || 'Aşı kaydı oluşturulamadı.',
         variant: 'destructive',
       });
     },
   });
 
   const handleCreateVaccination = (data: any) => {
+    console.log('Vaccination data being submitted:', data);
     createVaccinationMutation.mutate(data);
   };
 

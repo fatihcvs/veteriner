@@ -47,10 +47,17 @@ export default function VaccinationForm({
   });
 
   const handleSubmit = (data: VaccinationFormData) => {
+    console.log('Vaccination form data:', data);
+    console.log('Form errors:', form.formState.errors);
+    
     // Convert date string to ISO format for backend
     const submitData = {
       ...data,
       administeredAt: new Date(data.administeredAt).toISOString(),
+      // Empty strings should be undefined for optional fields
+      lotNo: data.lotNo?.trim() || undefined,
+      certificateNo: data.certificateNo?.trim() || undefined,
+      notes: data.notes?.trim() || undefined,
     };
     onSubmit(submitData);
   };
