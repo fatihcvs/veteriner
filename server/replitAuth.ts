@@ -125,6 +125,12 @@ export async function setupAuth(app: Express) {
       );
     });
   });
+
+  app.post("/api/logout", (req, res) => {
+    req.logout(() => {
+      res.sendStatus(200);
+    });
+  });
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {

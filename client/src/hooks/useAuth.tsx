@@ -92,11 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
-      toast({
-        title: "Çıkış yapıldı",
-        description: "Başarıyla çıkış yapıldı",
-      });
+      queryClient.clear(); // Clear all cached data
+      // Redirect to home page after successful logout
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
