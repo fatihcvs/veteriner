@@ -4,7 +4,7 @@ import {
   Shield, Users, Building, Settings, BarChart3, Database, 
   FileText, Bell, Package, Calendar, Stethoscope, CreditCard,
   Activity, AlertTriangle, TrendingUp, Download, Edit3, Trash2,
-  Home, RefreshCw, Upload, Plus
+  Home, RefreshCw, Upload, Plus, Syringe, Eye, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,6 +107,19 @@ function AdminPanel() {
 
   const { data: systemLogs } = useQuery({
     queryKey: ['/api/admin/logs'],
+  });
+
+  // Vaccination data queries
+  const { data: allVaccines, isLoading: vaccinesLoading } = useQuery({
+    queryKey: ['/api/vaccines'],
+  });
+
+  const { data: allVaccinationEvents, isLoading: vaccinationEventsLoading } = useQuery({
+    queryKey: ['/api/admin/vaccination-events'],
+  });
+
+  const { data: overdueVaccinations, isLoading: overdueLoading } = useQuery({
+    queryKey: ['/api/vaccinations/overdue'],
   });
 
   // User management mutations
@@ -273,10 +286,11 @@ function AdminPanel() {
 
       {/* Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
           <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
           <TabsTrigger value="pets">Hayvanlar</TabsTrigger>
+          <TabsTrigger value="vaccinations">Aşı Kayıtları</TabsTrigger>
           <TabsTrigger value="clinics">Klinikler</TabsTrigger>
           <TabsTrigger value="pages">Sayfalar</TabsTrigger>
           <TabsTrigger value="content">İçerik</TabsTrigger>
@@ -545,6 +559,254 @@ function AdminPanel() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Vaccination Records Tab */}
+        <TabsContent value="vaccinations" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Toplam Aşı Kayıtları</p>
+                    <p className="text-2xl font-bold text-slate-800">{(allVaccinationEvents || []).length}</p>
+                  </div>
+                  <Syringe className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Geciken Aşılar</p>
+                    <p className="text-2xl font-bold text-red-600">{(overdueVaccinations || []).length}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-professional-gray">Aşı Türleri</p>
+                    <p className="text-2xl font-bold text-slate-800">{(allVaccines || []).length}</p>
+                  </div>
+                  <Package className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Tabs defaultValue="events" className="w-full">
+            <TabsList>
+              <TabsTrigger value="events">Aşı Kayıtları</TabsTrigger>
+              <TabsTrigger value="overdue">Geciken Aşılar</TabsTrigger>
+              <TabsTrigger value="vaccines">Aşı Türleri</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="events" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <Syringe className="h-5 w-5" />
+                      Tüm Aşı Kayıtları ({(allVaccinationEvents || []).length})
+                    </CardTitle>
+                    <Button 
+                      onClick={() => {
+                        toast({ title: "Yeni aşı kaydı ekleme özelliği yakında aktif olacak" });
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Yeni Aşı Kaydı
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {vaccinationEventsLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="space-y-4">
+                      {(allVaccinationEvents || []).map((event: any) => (
+                        <div key={event.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-medium text-lg">{event.petName || 'Bilinmeyen Hayvan'}</h4>
+                                <Badge className="bg-blue-100 text-blue-800">
+                                  {event.vaccineId || 'Aşı Bilgisi'}
+                                </Badge>
+                                <Badge className={event.status === 'DONE' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                                  {event.status === 'DONE' ? 'Tamamlandı' : 'Bekliyor'}
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-professional-gray">
+                                <div>
+                                  <span className="font-medium">Veriliş Tarihi:</span><br />
+                                  {event.administeredAt ? new Date(event.administeredAt).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Sonraki Tarih:</span><br />
+                                  {event.nextDueAt ? new Date(event.nextDueAt).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Lot No:</span><br />
+                                  {event.lotNo || 'Belirtilmemiş'}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Veteriner:</span><br />
+                                  {event.vetUserId || 'Belirtilmemiş'}
+                                </div>
+                              </div>
+
+                              {event.notes && (
+                                <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                                  <p className="text-sm text-slate-700">
+                                    <span className="font-medium">Notlar:</span> {event.notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2 ml-4">
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-1" />
+                                Görüntüle
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Edit3 className="h-4 w-4 mr-1" />
+                                Düzenle
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {(allVaccinationEvents || []).length === 0 && (
+                        <div className="text-center py-8">
+                          <Syringe className="h-16 w-16 mx-auto text-professional-gray mb-4" />
+                          <p className="text-professional-gray">Henüz aşı kaydı bulunmuyor</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="overdue" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                    Geciken Aşılar ({(overdueVaccinations || []).length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {overdueLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="space-y-4">
+                      {(overdueVaccinations || []).map((vaccination: any) => (
+                        <div key={vaccination.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-red-800">{vaccination.petName}</h4>
+                              <p className="text-sm text-red-600">
+                                Aşı: {vaccination.vaccineName} - 
+                                Son Tarih: {new Date(vaccination.nextDueAt).toLocaleDateString('tr-TR')}
+                              </p>
+                              <p className="text-xs text-red-500">
+                                {Math.floor((Date.now() - new Date(vaccination.nextDueAt).getTime()) / (1000 * 60 * 60 * 24))} gün gecikmiş
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                                <Syringe className="h-4 w-4 mr-1" />
+                                Aşı Yap
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {(overdueVaccinations || []).length === 0 && (
+                        <div className="text-center py-8">
+                          <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
+                          <p className="text-green-600 font-medium">Harika! Geciken aşı bulunmuyor</p>
+                          <p className="text-professional-gray text-sm">Tüm aşılar zamanında yapılmış</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="vaccines" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Aşı Türleri ({(allVaccines || []).length})
+                    </CardTitle>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Yeni Aşı Türü
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {vaccinesLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {(allVaccines || []).map((vaccine: any) => (
+                        <div key={vaccine.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <h4 className="font-medium">{vaccine.name}</h4>
+                              <Badge className="bg-slate-100 text-slate-800 mt-1">
+                                {vaccine.species}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm">
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-red-600">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2 text-sm text-professional-gray">
+                            <div>
+                              <span className="font-medium">Üretici:</span> {vaccine.manufacturer}
+                            </div>
+                            <div>
+                              <span className="font-medium">Aralık:</span> {vaccine.defaultIntervalDays} gün
+                            </div>
+                            {vaccine.description && (
+                              <div>
+                                <span className="font-medium">Açıklama:</span> {vaccine.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Clinics Tab */}
