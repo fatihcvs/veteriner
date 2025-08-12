@@ -15,6 +15,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Pet } from '@shared/schema';
+import { getSpeciesIcon } from '@/lib/species-utils';
 
 export default function Pets() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -60,18 +61,7 @@ export default function Pets() {
     createPetMutation.mutate(data);
   };
 
-  const getSpeciesIcon = (species: string) => {
-    switch (species) {
-      case 'DOG':
-        return 'fas fa-dog';
-      case 'CAT':
-        return 'fas fa-cat';
-      case 'BIRD':
-        return 'fas fa-dove';
-      default:
-        return 'fas fa-paw';
-    }
-  };
+
 
   if (isLoading) {
     return (

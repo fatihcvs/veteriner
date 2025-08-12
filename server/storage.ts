@@ -72,6 +72,7 @@ export interface IStorage {
   createPet(pet: InsertPet): Promise<Pet>;
   getClinicPets(clinicId: string): Promise<Pet[]>;
   getUserPets(userId: string): Promise<Pet[]>;
+  getAllPetsWithOwners(): Promise<any[]>;
   updatePet(id: string, updates: Partial<Pet>): Promise<Pet>;
   
   // Vaccination operations
@@ -727,6 +728,22 @@ export class MemStorage implements IStorage {
 
   async getUserPets(userId: string): Promise<Pet[]> {
     return Array.from(this.pets.values()).filter(pet => pet.ownerId === userId);
+  }
+
+  async getAllPetsWithOwners(): Promise<any[]> {
+    return Array.from(this.pets.values()).map(pet => {
+      const owner = this.users.get(pet.ownerId);
+      return {
+        ...pet,
+        ownerName: owner ? `${owner.firstName} ${owner.lastName}` : 'Unknown',
+        ownerEmail: owner?.email || '',
+        ownerPhone: owner?.phone || ''
+      };
+    });
+  }
+
+  async getClinicPets(clinicId: string): Promise<Pet[]> {
+    return Array.from(this.pets.values()).filter(pet => pet.clinicId === clinicId);
   }
 
   async updatePet(id: string, updates: UpdatePet): Promise<Pet> {
@@ -1534,7 +1551,7 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Initialize database storage and seed data
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
 
 // Seed initial data
 async function seedData() {
