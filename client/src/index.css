@@ -51,6 +51,16 @@
   --radius: 0.75rem;
 }
 
+/* Custom scrollbar styles */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .dark {
   --background: hsl(224 71% 4%);
   --foreground: hsl(213 31% 91%);
