@@ -111,7 +111,7 @@ export default function FeedingPage() {
         expectedDepletionDate: expectedDepletionDate.toISOString().split('T')[0],
       };
 
-      return await apiRequest('/api/feeding-plans', 'POST', planData);
+      return await apiRequest('POST', '/api/feeding-plans', planData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/feeding-plans'] });
@@ -134,7 +134,7 @@ export default function FeedingPage() {
   // Mama planını sil
   const deleteFeedingPlan = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/feeding-plans/${id}`, 'DELETE');
+      return await apiRequest('DELETE', `/api/feeding-plans/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/feeding-plans'] });
