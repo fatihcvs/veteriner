@@ -71,6 +71,7 @@ export const NAVIGATION_ITEMS = [
   {
     key: 'appointments',
     label: 'Randevular',
+    petOwnerLabel: 'Randevularım',
     icon: 'fas fa-calendar-check',
     href: '/appointments',
     badge: true,
@@ -79,6 +80,7 @@ export const NAVIGATION_ITEMS = [
   {
     key: 'pets',
     label: 'Evcil Hayvanlar',
+    petOwnerLabel: 'Hayvanlarım',
     icon: 'fas fa-paw',
     href: '/pets',
     roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
@@ -119,6 +121,7 @@ export const ECOMMERCE_ITEMS = [
   {
     key: 'shop',
     label: 'Mağaza',
+    petOwnerLabel: 'Mağaza',
     icon: 'fas fa-store',
     href: '/shop',
     roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
@@ -126,6 +129,7 @@ export const ECOMMERCE_ITEMS = [
   {
     key: 'orders',
     label: 'Siparişler',
+    petOwnerLabel: 'Siparişlerim',
     icon: 'fas fa-shopping-cart',
     href: '/orders',
     badge: true,
@@ -144,6 +148,7 @@ export const MANAGEMENT_ITEMS = [
   {
     key: 'profile',
     label: 'Profil',
+    petOwnerLabel: 'Profilim',
     icon: 'fas fa-user-circle',
     href: '/profile',
     roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
@@ -158,6 +163,7 @@ export const MANAGEMENT_ITEMS = [
   {
     key: 'notifications',
     label: 'Bildirimler',
+    petOwnerLabel: 'Bildirimlerim',
     icon: 'fas fa-bell',
     href: '/notifications',
     roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']

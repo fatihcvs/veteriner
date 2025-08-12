@@ -44,14 +44,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             
             // Customize labels based on user role
             let displayLabel = item.label;
-            if (item.key === 'pets') {
-              displayLabel = user?.role === 'PET_OWNER' ? 'Hayvanlarım' : 'Hastalar';
-            } else if (item.key === 'appointments') {
-              displayLabel = user?.role === 'PET_OWNER' ? 'Randevularım' : 'Randevular';
-            } else if (item.key === 'orders') {
-              displayLabel = user?.role === 'PET_OWNER' ? 'Siparişlerim' : 'Siparişler';
-            } else if (item.key === 'notifications') {
-              displayLabel = user?.role === 'PET_OWNER' ? 'Bildirimlerim' : 'Bildirimler';
+            if (user?.role === 'PET_OWNER' && item.petOwnerLabel) {
+              displayLabel = item.petOwnerLabel;
             }
             return (
               <Link key={item.key} href={item.href}>
@@ -89,8 +83,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 
                 // Customize labels based on user role
                 let displayLabel = item.label;
-                if (item.key === 'orders') {
-                  displayLabel = user?.role === 'PET_OWNER' ? 'Siparişlerim' : 'Siparişler';
+                if (user?.role === 'PET_OWNER' && item.petOwnerLabel) {
+                  displayLabel = item.petOwnerLabel;
                 }
                 return (
                   <Link key={item.key} href={item.href}>
@@ -130,8 +124,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 
                 // Customize labels based on user role  
                 let displayLabel = item.label;
-                if (item.key === 'notifications') {
-                  displayLabel = user?.role === 'PET_OWNER' ? 'Bildirimlerim' : 'Bildirimler';
+                if (user?.role === 'PET_OWNER' && item.petOwnerLabel) {
+                  displayLabel = item.petOwnerLabel;
                 }
                 return (
                   <Link key={item.key} href={item.href}>

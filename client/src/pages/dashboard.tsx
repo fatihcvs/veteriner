@@ -5,12 +5,18 @@ import UrgentNotifications from '@/components/dashboard/urgent-notifications';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageCircle } from 'lucide-react';
+import { Plus, MessageCircle, Calendar, ShoppingCart } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'wouter';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isPetOwner = user?.role === 'PET_OWNER';
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     retry: false,
+    enabled: !isPetOwner, // Only fetch clinic stats for staff
   });
 
   const { data: todayAppointments, isLoading: appointmentsLoading } = useQuery({
@@ -18,12 +24,28 @@ export default function Dashboard() {
     retry: false,
   });
 
-  if (statsLoading) {
+  const { data: userPets, isLoading: petsLoading } = useQuery({
+    queryKey: ['/api/pets'],
+    retry: false,
+    enabled: isPetOwner, // Only fetch user pets for pet owners
+  });
+
+  const { data: userOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/orders'],
+    retry: false,
+    enabled: isPetOwner, // Only fetch user orders for pet owners
+  });
+
+  if (statsLoading || petsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <LoadingSpinner size="lg" />
       </div>
     );
+  }
+
+  if (isPetOwner) {
+    return <PetOwnerDashboard pets={userPets || []} orders={userOrders || []} appointments={todayAppointments || []} />;
   }
 
   return (
@@ -243,6 +265,209 @@ export default function Dashboard() {
         <Button className="bg-medical-blue hover:bg-medical-blue/90 text-white p-4 rounded-full shadow-lg">
           <Plus className="h-6 w-6" />
         </Button>
+      </div>
+    </div>
+  );
+}
+
+// Pet Owner Dashboard Component
+function PetOwnerDashboard({ pets, orders, appointments }: { pets: any[], orders: any[], appointments: any[] }) {
+  const totalPets = pets.length;
+  const upcomingAppointments = appointments.length;
+  const recentOrders = orders.slice(0, 3);
+  const recentPets = pets.slice(0, 2);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-slate-800">Hoş Geldiniz</h1>
+        <p className="text-professional-gray">Evcil hayvan bakım ve takip sisteminiz</p>
+      </div>
+
+      {/* Quick Stats for Pet Owners */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        <StatsCard
+          title="Hayvanlarım"
+          value={totalPets}
+          change={totalPets > 0 ? "Kayıtlı hayvan sayısı" : "Henüz hayvan eklenmemiş"}
+          changeType="neutral"
+          icon="fas fa-paw"
+          color="medical-blue"
+        />
+        <StatsCard
+          title="Yaklaşan Randevular"
+          value={upcomingAppointments}
+          change={upcomingAppointments > 0 ? "Bu hafta" : "Randevu planlanmamış"}
+          changeType={upcomingAppointments > 0 ? "positive" : "neutral"}
+          icon="fas fa-calendar-check"
+          color="healthcare-green"
+        />
+        <StatsCard
+          title="Son Siparişler"
+          value={orders.length}
+          change={orders.length > 0 ? "Toplam sipariş" : "Henüz sipariş yok"}
+          changeType="neutral"
+          icon="fas fa-shopping-cart"
+          color="action-teal"
+        />
+        <StatsCard
+          title="Bildirimler"
+          value="3"
+          change="Okunmamış bildirim"
+          changeType="neutral"
+          icon="fas fa-bell"
+          color="orange"
+        />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Hızlı İşlemler</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Link href="/pets">
+              <Button className="w-full justify-start" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Yeni Hayvan Ekle
+              </Button>
+            </Link>
+            <Link href="/appointments">
+              <Button className="w-full justify-start" variant="outline">
+                <Calendar className="h-4 w-4 mr-2" />
+                Randevu Al
+              </Button>
+            </Link>
+            <Link href="/shop">
+              <Button className="w-full justify-start" variant="outline">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Mağazaya Git
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activities */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Son Aktiviteler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentPets.length > 0 ? (
+                recentPets.map((pet) => (
+                  <div key={pet.id} className="flex items-start space-x-3">
+                    <div className="bg-medical-blue/10 p-2 rounded-lg">
+                      <i className="fas fa-paw text-medical-blue"></i>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-slate-800">
+                        {pet.name} kaydı oluşturuldu
+                      </p>
+                      <p className="text-xs text-professional-gray">
+                        {new Date(pet.createdAt).toLocaleDateString('tr-TR')}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-professional-gray">Henüz aktivite bulunmuyor</p>
+                  <p className="text-sm text-professional-gray mt-1">
+                    İlk hayvanınızı ekleyerek başlayın
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* My Pets */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Hayvanlarım</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {totalPets > 0 ? (
+              <div className="space-y-3">
+                {recentPets.map((pet) => (
+                  <div key={pet.id} className="flex items-center space-x-3 p-2 rounded-lg border">
+                    <div className="bg-medical-blue/10 p-2 rounded-lg">
+                      <i className="fas fa-paw text-medical-blue"></i>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-800">{pet.name}</p>
+                      <p className="text-sm text-professional-gray">{pet.species} • {pet.breed || 'Cins belirtilmemiş'}</p>
+                    </div>
+                  </div>
+                ))}
+                {totalPets > 2 && (
+                  <Link href="/pets">
+                    <Button variant="ghost" className="w-full">
+                      {totalPets - 2} hayvan daha göster
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="bg-slate-100 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center mb-4">
+                  <i className="fas fa-paw text-professional-gray text-2xl"></i>
+                </div>
+                <p className="text-professional-gray mb-2">Henüz hayvan kaydınız yok</p>
+                <Link href="/pets">
+                  <Button size="sm">İlk Hayvanınızı Ekleyin</Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Orders */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Son Siparişler</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {orders.length > 0 ? (
+              <div className="space-y-3">
+                {recentOrders.map((order) => (
+                  <div key={order.id} className="flex items-center justify-between p-2 rounded-lg border">
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        Sipariş #{order.id.slice(-6)}
+                      </p>
+                      <p className="text-xs text-professional-gray">
+                        ₺{order.totalAmount} • {order.status}
+                      </p>
+                    </div>
+                    <div className="text-xs text-professional-gray">
+                      {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                    </div>
+                  </div>
+                ))}
+                <Link href="/orders">
+                  <Button variant="ghost" className="w-full">
+                    Tüm Siparişleri Göster
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="bg-slate-100 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center mb-4">
+                  <i className="fas fa-shopping-cart text-professional-gray text-2xl"></i>
+                </div>
+                <p className="text-professional-gray mb-2">Henüz siparişiniz yok</p>
+                <Link href="/shop">
+                  <Button size="sm">Mağazayı Keşfedin</Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
