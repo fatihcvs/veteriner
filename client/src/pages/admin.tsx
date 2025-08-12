@@ -53,7 +53,7 @@ interface SystemClinic {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
-export default function AdminPanel() {
+function AdminPanel() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
@@ -638,4 +638,24 @@ export default function AdminPanel() {
       )}
     </div>
   );
+}
+
+// Export with role protection
+export default function Admin() {
+  const { user } = useAuth();
+
+  // Only allow SUPER_ADMIN and CLINIC_ADMIN access
+  if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Shield className="h-16 w-16 mx-auto text-slate-400 mb-4" />
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Erişim Reddedildi</h1>
+          <p className="text-slate-600">Bu sayfayı görüntüleme yetkiniz bulunmuyor.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <AdminPanel />;
 }

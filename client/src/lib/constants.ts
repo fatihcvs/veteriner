@@ -56,6 +56,7 @@ export const NAVIGATION_ITEMS = [
     label: 'Pano',
     icon: 'fas fa-chart-pie',
     href: '/',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'appointments',
@@ -63,18 +64,21 @@ export const NAVIGATION_ITEMS = [
     icon: 'fas fa-calendar-check',
     href: '/appointments',
     badge: true,
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'pets',
     label: 'Evcil Hayvanlar',
     icon: 'fas fa-paw',
     href: '/pets',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'owners',
     label: 'Hayvan Sahipleri',
     icon: 'fas fa-users',
-    href: '/owners',
+    href: '/pet-owners',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF'] // Pet owners can't see other owners
   },
   {
     key: 'vaccinations',
@@ -82,6 +86,7 @@ export const NAVIGATION_ITEMS = [
     icon: 'fas fa-syringe',
     href: '/vaccinations',
     badge: true,
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'feeding',
@@ -89,12 +94,14 @@ export const NAVIGATION_ITEMS = [
     icon: 'fas fa-bowl-food',
     href: '/feeding',
     badge: true,
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'medical-records',
     label: 'Tıbbi Kayıtlar',
     icon: 'fas fa-file-medical',
     href: '/medical-records',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
 ];
 
@@ -104,6 +111,7 @@ export const ECOMMERCE_ITEMS = [
     label: 'Ürünler',
     icon: 'fas fa-store',
     href: '/shop',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'orders',
@@ -111,12 +119,14 @@ export const ECOMMERCE_ITEMS = [
     icon: 'fas fa-shopping-cart',
     href: '/orders',
     badge: true,
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'inventory',
     label: 'Envanter',
     icon: 'fas fa-boxes',
     href: '/inventory',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF'] // Only clinic staff
   },
 ];
 
@@ -126,30 +136,40 @@ export const MANAGEMENT_ITEMS = [
     label: 'Profil',
     icon: 'fas fa-user-circle',
     href: '/profile',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'staff',
     label: 'Personel',
     icon: 'fas fa-user-md',
     href: '/staff',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN'] // Only admins
   },
   {
     key: 'notifications',
     label: 'Bildirimler',
     icon: 'fas fa-bell',
     href: '/notifications',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
   {
     key: 'admin',
     label: 'Admin Paneli',
     icon: 'fas fa-shield-alt',
     href: '/admin',
-    adminOnly: true,
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN'] // Only admins
   },
   {
     key: 'settings',
     label: 'Ayarlar',
     icon: 'fas fa-cog',
     href: '/settings',
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
   },
 ];
+
+// Helper function to check if user has access to navigation item
+export const hasAccess = (item: any, userRole: string) => {
+  if (!item.roles) return true; // If no roles specified, everyone has access
+  return item.roles.includes(userRole);
+};

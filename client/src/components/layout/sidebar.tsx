@@ -37,7 +37,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         {/* Navigation Menu */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {/* Main Navigation */}
-          {NAVIGATION_ITEMS.map((item) => {
+          {NAVIGATION_ITEMS
+            .filter(item => !item.roles || item.roles.includes(user?.role))
+            .map((item) => {
             const isActive = location === item.href;
             return (
               <Link key={item.key} href={item.href}>
@@ -63,67 +65,69 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           })}
 
           {/* E-commerce Section */}
-          <div className="pt-4 border-t border-slate-200 mt-4">
-            <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
-              E-TİCARET
-            </p>
-            {ECOMMERCE_ITEMS.map((item) => {
-              const isActive = location === item.href;
-              return (
-                <Link key={item.key} href={item.href}>
-                  <button
-                    onClick={onClose}
-                    className={cn(
-                      "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
-                      isActive
-                        ? "bg-medical-blue text-white"
-                        : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
-                    )}
-                  >
-                    <i className={`${item.icon} w-5`}></i>
-                    <span className="font-medium">{item.label}</span>
-                    {item.badge && (
-                      <span className="ml-auto bg-action-teal text-white text-xs px-2 py-1 rounded-full">
-                        2
-                      </span>
-                    )}
-                  </button>
-                </Link>
-              );
-            })}
-          </div>
+          {ECOMMERCE_ITEMS.filter(item => !item.roles || item.roles.includes(user?.role)).length > 0 && (
+            <div className="pt-4 border-t border-slate-200 mt-4">
+              <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
+                E-TİCARET
+              </p>
+              {ECOMMERCE_ITEMS
+                .filter(item => !item.roles || item.roles.includes(user?.role))
+                .map((item) => {
+                const isActive = location === item.href;
+                return (
+                  <Link key={item.key} href={item.href}>
+                    <button
+                      onClick={onClose}
+                      className={cn(
+                        "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
+                        isActive
+                          ? "bg-medical-blue text-white"
+                          : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
+                      )}
+                    >
+                      <i className={`${item.icon} w-5`}></i>
+                      <span className="font-medium">{item.label}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-action-teal text-white text-xs px-2 py-1 rounded-full">
+                          2
+                        </span>
+                      )}
+                    </button>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
 
           {/* Management Section */}
-          <div className="pt-4 border-t border-slate-200 mt-4">
-            <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
-              YÖNETİM
-            </p>
-            {MANAGEMENT_ITEMS.filter((item) => {
-              // Show admin panel only for SUPER_ADMIN and CLINIC_ADMIN
-              if (item.adminOnly) {
-                return user?.role === 'SUPER_ADMIN' || user?.role === 'CLINIC_ADMIN';
-              }
-              return true;
-            }).map((item) => {
-              const isActive = location === item.href;
-              return (
-                <Link key={item.key} href={item.href}>
-                  <button
-                    onClick={onClose}
-                    className={cn(
-                      "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
-                      isActive
-                        ? "bg-medical-blue text-white"
-                        : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
-                    )}
-                  >
-                    <i className={`${item.icon} w-5`}></i>
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                </Link>
-              );
-            })}
-          </div>
+          {MANAGEMENT_ITEMS.filter(item => !item.roles || item.roles.includes(user?.role)).length > 0 && (
+            <div className="pt-4 border-t border-slate-200 mt-4">
+              <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
+                YÖNETİM
+              </p>
+              {MANAGEMENT_ITEMS
+                .filter(item => !item.roles || item.roles.includes(user?.role))
+                .map((item) => {
+                const isActive = location === item.href;
+                return (
+                  <Link key={item.key} href={item.href}>
+                    <button
+                      onClick={onClose}
+                      className={cn(
+                        "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
+                        isActive
+                          ? "bg-medical-blue text-white"
+                          : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
+                      )}
+                    >
+                      <i className={`${item.icon} w-5`}></i>
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
         {/* User Profile */}
