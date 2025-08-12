@@ -21,7 +21,7 @@ export default function Appointments() {
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const { toast } = useToast();
 
-  const { data: appointments, isLoading } = useQuery({
+  const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['/api/appointments'],
   });
 
@@ -127,10 +127,10 @@ export default function Appointments() {
               <DialogHeader>
                 <DialogTitle>Yeni Randevu Oluştur</DialogTitle>
               </DialogHeader>
-              {/* Appointment form would go here */}
-              <div className="p-4 text-center text-professional-gray">
-                Randevu formu yakında eklenecek
-              </div>
+              <AppointmentForm 
+                onSuccess={() => setIsFormOpen(false)}
+                pets={pets || []}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -180,7 +180,7 @@ export default function Appointments() {
         <TabsContent value="week">
           <WeekView
             weekStart={startOfWeek(selectedDate, { locale: tr })}
-            appointments={appointments || []}
+            appointments={appointments}
             getStatusColor={getStatusColor}
             getTypeIcon={getTypeIcon}
           />
@@ -353,5 +353,209 @@ function WeekView({
         );
       })}
     </div>
+  );
+}
+
+function AppointmentForm({ onSuccess, pets }: { onSuccess: () => void; pets: any[] }) {
+  const [selectedPet, setSelectedPet] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [appointmentType, setAppointmentType] = useState('CHECKUP');
+  const [notes, setNotes] = useState('');
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const { toast } = useToast();
+
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (appointmentData: any) => {
+      await apiRequest('POST', '/api/appointments', appointmentData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/appointments'] });
+      onSuccess();
+      toast({
+        title: 'Başarılı',
+        description: 'Randevu talebiniz oluşturuldu.',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Hata',
+        description: 'Randevu oluşturulamadı.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const fetchAvailableSlots = async (date: string, petId: string) => {
+    if (!date || !petId) return;
+    
+    setIsLoadingSlots(true);
+    try {
+      const pet = pets.find(p => p.id === petId);
+      if (!pet) return;
+      
+      const response = await fetch(`/api/appointments/available-slots?date=${date}&clinicId=${pet.clinicId}`);
+      const slots = await response.json();
+      setAvailableSlots(slots);
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedPet || !selectedDate || !selectedTime || !appointmentType) {
+      toast({
+        title: 'Eksik Bilgi',
+        description: 'Lütfen tüm gerekli alanları doldurun.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const pet = pets.find(p => p.id === selectedPet);
+    if (!pet) return;
+
+    createAppointmentMutation.mutate({
+      petId: selectedPet,
+      clinicId: pet.clinicId,
+      type: appointmentType,
+      scheduledAt: new Date(`${selectedDate}T${selectedTime}:00`),
+      notes: notes || undefined,
+      status: 'SCHEDULED',
+      duration: 30,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6" data-testid="appointment-form">
+      {/* Pet Selection */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Hayvan Seçin</label>
+        <select
+          value={selectedPet}
+          onChange={(e) => {
+            setSelectedPet(e.target.value);
+            if (selectedDate) {
+              fetchAvailableSlots(selectedDate, e.target.value);
+            }
+          }}
+          className="w-full p-3 border rounded-md"
+          data-testid="select-pet"
+        >
+          <option value="">Hayvan seçin...</option>
+          {pets.map(pet => (
+            <option key={pet.id} value={pet.id}>
+              {pet.name} ({pet.species} - {pet.breed})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date Selection */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Tarih Seçin</label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            if (selectedPet) {
+              fetchAvailableSlots(e.target.value, selectedPet);
+            }
+          }}
+          min={new Date().toISOString().split('T')[0]}
+          className="w-full p-3 border rounded-md"
+          data-testid="input-date"
+        />
+      </div>
+
+      {/* Time Slot Selection */}
+      {selectedDate && selectedPet && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Saat Seçin</label>
+          {isLoadingSlots ? (
+            <div className="text-center py-4">
+              <LoadingSpinner size="sm" />
+              <p className="text-sm text-professional-gray mt-2">Müsait saatler yükleniyor...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+              {availableSlots.map(slot => (
+                <button
+                  key={slot.time}
+                  type="button"
+                  onClick={() => setSelectedTime(slot.time)}
+                  disabled={!slot.available}
+                  className={`p-2 text-sm rounded border transition-colors ${
+                    selectedTime === slot.time
+                      ? 'bg-medical-blue text-white border-medical-blue'
+                      : slot.available
+                      ? 'bg-white text-slate-700 border-gray-300 hover:border-medical-blue'
+                      : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  }`}
+                  data-testid={`slot-${slot.time}`}
+                >
+                  {slot.time}
+                  {!slot.available && (
+                    <div className="text-xs text-red-500">Dolu</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Appointment Type */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Randevu Türü</label>
+        <select
+          value={appointmentType}
+          onChange={(e) => setAppointmentType(e.target.value)}
+          className="w-full p-3 border rounded-md"
+          data-testid="select-type"
+        >
+          {Object.entries(APPOINTMENT_TYPES).map(([key, value]) => (
+            <option key={key} value={key}>{value}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Notes */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Notlar (Opsiyonel)</label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Randevu ile ilgili özel notlarınız..."
+          className="w-full p-3 border rounded-md h-24 resize-none"
+          data-testid="textarea-notes"
+        />
+      </div>
+
+      {/* Submit Button */}
+      <div className="flex gap-3 pt-4">
+        <Button
+          type="submit"
+          disabled={createAppointmentMutation.isPending || !selectedPet || !selectedDate || !selectedTime}
+          className="flex-1 bg-medical-blue hover:bg-medical-blue/90"
+          data-testid="button-submit"
+        >
+          {createAppointmentMutation.isPending ? (
+            <>
+              <LoadingSpinner size="sm" />
+              <span className="ml-2">Oluşturuluyor...</span>
+            </>
+          ) : (
+            'Randevu Oluştur'
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
 import { setupAdminRoutes } from "./admin";
-import { insertPetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema, updateUserProfileSchema, updatePetOwnerProfileSchema } from "@shared/schema";
+import { insertPetSchema, updatePetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema, updateUserProfileSchema, updatePetOwnerProfileSchema } from "@shared/schema";
 import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
 import { pdfService } from "./services/pdf";
@@ -664,6 +664,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  // Appointment routes
+  app.get('/api/appointments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      let appointments = [];
+      
+      if (user.role === 'PET_OWNER') {
+        const pets = await storage.getUserPets(userId);
+        appointments = [];
+        for (const pet of pets) {
+          const petAppointments = await storage.getClinicAppointments(pet.clinicId);
+          appointments.push(...petAppointments.filter(apt => apt.petId === pet.id));
+        }
+      } else {
+        const clinics = await storage.getUserClinics(userId);
+        if (clinics.length > 0) {
+          appointments = await storage.getClinicAllAppointments(clinics[0].id);
+        }
+      }
+      
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Failed to fetch appointments" });
+    }
+  });
+
+  app.get('/api/appointments/available-slots', requireAuth, async (req: any, res) => {
+    try {
+      const { date, clinicId } = req.query;
+      
+      if (!date || !clinicId) {
+        return res.status(400).json({ message: 'Date and clinic ID are required' });
+      }
+      
+      // Get existing appointments for the date
+      const existingAppointments = await storage.getClinicAppointments(clinicId, date);
+      
+      // Generate time slots (9:00 - 18:00, 30-minute intervals)
+      const slots = [];
+      for (let hour = 9; hour < 18; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const slotDateTime = new Date(`${date}T${timeString}:00`);
+          
+          // Check if slot is already booked
+          const isBooked = existingAppointments.some(apt => {
+            const aptTime = new Date(apt.scheduledAt);
+            return aptTime.getTime() === slotDateTime.getTime();
+          });
+          
+          slots.push({
+            time: timeString,
+            datetime: slotDateTime.toISOString(),
+            available: !isBooked
+          });
+        }
+      }
+      
+      res.json(slots);
+    } catch (error) {
+      console.error("Error fetching available slots:", error);
+      res.status(500).json({ message: "Failed to fetch available slots" });
+    }
+  });
+
+  app.post('/api/appointments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const appointmentData = insertAppointmentSchema.parse(req.body);
+      
+      // Set default values
+      appointmentData.status = 'SCHEDULED';
+      appointmentData.createdBy = userId;
+      
+      // For pet owners, verify they own the pet
+      if (req.user.role === 'PET_OWNER') {
+        const pet = await storage.getPet(appointmentData.petId);
+        if (!pet || pet.ownerId !== userId) {
+          return res.status(403).json({ message: 'You can only book appointments for your own pets' });
+        }
+        appointmentData.clinicId = pet.clinicId;
+      }
+      
+      const appointment = await storage.createAppointment(appointmentData);
+      res.json(appointment);
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      res.status(500).json({ message: "Failed to create appointment" });
     }
   });
 

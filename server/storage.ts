@@ -502,10 +502,6 @@ export class MemStorage implements IStorage {
     return pet;
   }
 
-  async getClinicPets(clinicId: string): Promise<Pet[]> {
-    return Array.from(this.pets.values()).filter(pet => pet.clinicId === clinicId);
-  }
-
   async getUserPets(userId: string): Promise<Pet[]> {
     return Array.from(this.pets.values()).filter(pet => pet.ownerId === userId);
   }
@@ -525,6 +521,8 @@ export class MemStorage implements IStorage {
     
     this.pets.delete(id);
   }
+
+
 
   // Vaccination operations
   async getVaccines(): Promise<Vaccine[]> {
@@ -646,6 +644,15 @@ export class MemStorage implements IStorage {
 
   async getAppointment(id: string): Promise<Appointment | undefined> {
     return this.appointments.get(id);
+  }
+
+  async updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment> {
+    const appointment = this.appointments.get(id);
+    if (!appointment) throw new Error('Appointment not found');
+    
+    const updatedAppointment = { ...appointment, ...updates, updatedAt: new Date() };
+    this.appointments.set(id, updatedAppointment);
+    return updatedAppointment;
   }
 
   async getClinicAppointments(clinicId: string, date?: string): Promise<any[]> {
