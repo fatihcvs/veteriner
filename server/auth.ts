@@ -102,6 +102,7 @@ export function setupAuth(app: Express) {
         ...validatedData,
         password: hashedPassword,
         profileImageUrl: null,
+        phone: validatedData.phone || null,
         whatsappPhone: null,
         whatsappOptIn: false,
         locale: 'tr',

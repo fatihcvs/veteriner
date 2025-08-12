@@ -33,6 +33,13 @@ The system is designed as a multi-tenant application supporting different user r
 - **Product Catalog**: Integrated authentic, high-selling products including smart feeders, premium organic foods, interactive toys, GPS trackers, CBD wellness products, and luxury pet tech
 - **Market Research Integration**: Products selected based on real market data showing growth rates of 5.8%-200% in their respective categories
 
+### Role-Based Access Control (Pet Owner Focus)
+- **Default User Role**: New registrations automatically assigned PET_OWNER role instead of admin roles
+- **Navigation Restrictions**: PET_OWNER users see only: "Hayvanlarım", "Randevularım", "Mağaza", "Siparişlerim", "Profilim", "Bildirimlerim"
+- **Dynamic Labels**: Navigation menu labels change based on user role (e.g., "Hayvanlarım" for pet owners vs "Hastalar" for clinic staff)
+- **Complete Appointment System**: Fully functional appointment booking with time slot selection, pet selection, and form validation
+- **Admin Panel Restriction**: Only SUPER_ADMIN and CLINIC_ADMIN can access admin features and staff management
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

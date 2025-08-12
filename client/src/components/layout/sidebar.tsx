@@ -38,9 +38,21 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {/* Main Navigation */}
           {NAVIGATION_ITEMS
-            .filter(item => !item.roles || item.roles.includes(user?.role))
+            .filter(item => !item.roles || (user?.role && item.roles.includes(user.role)))
             .map((item) => {
             const isActive = location === item.href;
+            
+            // Customize labels based on user role
+            let displayLabel = item.label;
+            if (item.key === 'pets') {
+              displayLabel = user?.role === 'PET_OWNER' ? 'Hayvanlarım' : 'Hastalar';
+            } else if (item.key === 'appointments') {
+              displayLabel = user?.role === 'PET_OWNER' ? 'Randevularım' : 'Randevular';
+            } else if (item.key === 'orders') {
+              displayLabel = user?.role === 'PET_OWNER' ? 'Siparişlerim' : 'Siparişler';
+            } else if (item.key === 'notifications') {
+              displayLabel = user?.role === 'PET_OWNER' ? 'Bildirimlerim' : 'Bildirimler';
+            }
             return (
               <Link key={item.key} href={item.href}>
                 <button
@@ -53,7 +65,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   )}
                 >
                   <i className={`${item.icon} w-5`}></i>
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">{displayLabel}</span>
                   {item.badge && (
                     <span className="ml-auto bg-healthcare-green text-white text-xs px-2 py-1 rounded-full">
                       4
@@ -65,15 +77,21 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           })}
 
           {/* E-commerce Section */}
-          {ECOMMERCE_ITEMS.filter(item => !item.roles || item.roles.includes(user?.role)).length > 0 && (
+          {ECOMMERCE_ITEMS.filter(item => !item.roles || (user?.role && item.roles.includes(user.role))).length > 0 && (
             <div className="pt-4 border-t border-slate-200 mt-4">
               <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
                 E-TİCARET
               </p>
               {ECOMMERCE_ITEMS
-                .filter(item => !item.roles || item.roles.includes(user?.role))
+                .filter(item => !item.roles || (user?.role && item.roles.includes(user.role)))
                 .map((item) => {
                 const isActive = location === item.href;
+                
+                // Customize labels based on user role
+                let displayLabel = item.label;
+                if (item.key === 'orders') {
+                  displayLabel = user?.role === 'PET_OWNER' ? 'Siparişlerim' : 'Siparişler';
+                }
                 return (
                   <Link key={item.key} href={item.href}>
                     <button
@@ -86,7 +104,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                       )}
                     >
                       <i className={`${item.icon} w-5`}></i>
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium">{displayLabel}</span>
                       {item.badge && (
                         <span className="ml-auto bg-action-teal text-white text-xs px-2 py-1 rounded-full">
                           2
@@ -100,15 +118,21 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           )}
 
           {/* Management Section */}
-          {MANAGEMENT_ITEMS.filter(item => !item.roles || item.roles.includes(user?.role)).length > 0 && (
+          {MANAGEMENT_ITEMS.filter(item => !item.roles || (user?.role && item.roles.includes(user.role))).length > 0 && (
             <div className="pt-4 border-t border-slate-200 mt-4">
               <p className="text-xs font-semibold text-professional-gray uppercase tracking-wider mb-2">
                 YÖNETİM
               </p>
               {MANAGEMENT_ITEMS
-                .filter(item => !item.roles || item.roles.includes(user?.role))
+                .filter(item => !item.roles || (user?.role && item.roles.includes(user.role)))
                 .map((item) => {
                 const isActive = location === item.href;
+                
+                // Customize labels based on user role  
+                let displayLabel = item.label;
+                if (item.key === 'notifications') {
+                  displayLabel = user?.role === 'PET_OWNER' ? 'Bildirimlerim' : 'Bildirimler';
+                }
                 return (
                   <Link key={item.key} href={item.href}>
                     <button
@@ -121,7 +145,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                       )}
                     >
                       <i className={`${item.icon} w-5`}></i>
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium">{displayLabel}</span>
                     </button>
                   </Link>
                 );
@@ -144,7 +168,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 {user?.firstName} {user?.lastName}
               </p>
               <p className="text-sm text-professional-gray">
-                {user?.role === 'VET' ? 'Veteriner' : 'Başhekim'}
+                {user?.role === 'VET' ? 'Veteriner' : 
+                 user?.role === 'PET_OWNER' ? 'Hayvan Sahibi' :
+                 user?.role === 'STAFF' ? 'Personel' :
+                 user?.role === 'CLINIC_ADMIN' ? 'Klinik Yöneticisi' :
+                 user?.role === 'SUPER_ADMIN' ? 'Sistem Yöneticisi' : 'Kullanıcı'}
               </p>
             </div>
             <Button
