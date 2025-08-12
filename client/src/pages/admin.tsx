@@ -3,7 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Shield, Users, Building, Settings, BarChart3, Database, 
   FileText, Bell, Package, Calendar, Stethoscope, CreditCard,
-  Activity, AlertTriangle, TrendingUp, Download, Edit3, Trash2
+  Activity, AlertTriangle, TrendingUp, Download, Edit3, Trash2,
+  Home, RefreshCw, Upload, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -245,11 +246,13 @@ function AdminPanel() {
 
       {/* Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
           <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
           <TabsTrigger value="clinics">Klinikler</TabsTrigger>
+          <TabsTrigger value="pages">Sayfalar</TabsTrigger>
           <TabsTrigger value="content">İçerik</TabsTrigger>
+          <TabsTrigger value="database">Veritabanı</TabsTrigger>
           <TabsTrigger value="system">Sistem</TabsTrigger>
           <TabsTrigger value="logs">Loglar</TabsTrigger>
         </TabsList>
@@ -457,41 +460,395 @@ function AdminPanel() {
           </Card>
         </TabsContent>
 
-        {/* Content Management Tab */}
-        <TabsContent value="content" className="space-y-4">
+        {/* Page Management Tab */}
+        <TabsContent value="pages" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <Package className="h-12 w-12 mx-auto text-medical-blue mb-4" />
-                <h3 className="font-medium mb-2">Ürün Yönetimi</h3>
-                <p className="text-sm text-professional-gray">E-ticaret ürünlerini yönet</p>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Home className="h-5 w-5" />
+                  Ana Sayfa Yönetimi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Başlık Metni</label>
+                  <Input defaultValue="VetTrack Pro ile Evcil Hayvanınızı Takip Edin" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Alt Başlık</label>
+                  <Input defaultValue="Dijital sağlık kartı, aşı takibi ve daha fazlası" />
+                </div>
+                <Button className="w-full">Güncelle</Button>
               </CardContent>
             </Card>
-            
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <Bell className="h-12 w-12 mx-auto text-medical-blue mb-4" />
-                <h3 className="font-medium mb-2">Bildirim Şablonları</h3>
-                <p className="text-sm text-professional-gray">Otomatik mesaj şablonları</p>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Auth Sayfası
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Giriş Mesajı</label>
+                  <Input defaultValue="Evcil hayvanınızın dijital sağlık kartına erişin" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Kayıt Mesajı</label>
+                  <Input defaultValue="Ücretsiz hesap oluşturun" />
+                </div>
+                <Button className="w-full">Güncelle</Button>
               </CardContent>
             </Card>
-            
-            <Card className="cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6 text-center">
-                <FileText className="h-12 w-12 mx-auto text-medical-blue mb-4" />
-                <h3 className="font-medium mb-2">Rapor Şablonları</h3>
-                <p className="text-sm text-professional-gray">PDF rapor düzenle</p>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Dashboard Ayarları
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">PET_OWNER Dashboard</label>
+                  <select className="w-full p-2 border rounded">
+                    <option>Hayvan Odaklı Dashboard</option>
+                    <option>Klinik Odaklı Dashboard</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Varsayılan Tema</label>
+                  <select className="w-full p-2 border rounded">
+                    <option>Açık Tema</option>
+                    <option>Koyu Tema</option>
+                  </select>
+                </div>
+                <Button className="w-full">Güncelle</Button>
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Sayfa Erişim Kontrolleri</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Dashboard</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>PET_OWNER</span>
+                        <Badge variant="secondary">Aktif</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>CLINIC_ADMIN</span>
+                        <Badge variant="secondary">Aktif</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Pets</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>PET_OWNER</span>
+                        <Badge variant="secondary">Aktif</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>VET</span>
+                        <Badge variant="secondary">Aktif</Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Admin Panel</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>SUPER_ADMIN</span>
+                        <Badge variant="secondary">Aktif</Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>CLINIC_ADMIN</span>
+                        <Badge variant="secondary">Aktif</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* System Settings Tab */}
-        <TabsContent value="system" className="space-y-4">
+        {/* Enhanced Content Management Tab */}
+        <TabsContent value="content" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Genel Ayarlar</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Ürün Yönetimi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span>Toplam Ürün</span>
+                  <Badge>24</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Aktif Ürün</span>
+                  <Badge variant="secondary">18</Badge>
+                </div>
+                <div className="space-y-2">
+                  <Button className="w-full" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Yeni Ürün Ekle
+                  </Button>
+                  <Button className="w-full" variant="outline">
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Toplu Düzenle
+                  </Button>
+                  <Button className="w-full" variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Excel İndir
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Bildirim Yönetimi
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">WhatsApp Bildirimleri</label>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" defaultChecked />
+                    <span className="text-sm">Aktif</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">E-posta Bildirimleri</label>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" defaultChecked />
+                    <span className="text-sm">Aktif</span>
+                  </div>
+                </div>
+                <Button className="w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Şablon Ayarları
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                İçerik Yönetimi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="vaccines" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="vaccines">Aşılar</TabsTrigger>
+                  <TabsTrigger value="species">Hayvan Türleri</TabsTrigger>
+                  <TabsTrigger value="brands">Markalar</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="vaccines" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Aşı Veritabanı</h4>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Yeni Aşı
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-2 border rounded">
+                      <span>Kuduz Aşısı</span>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">Düzenle</Button>
+                        <Button size="sm" variant="outline">Sil</Button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center p-2 border rounded">
+                      <span>5'li Aşı</span>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">Düzenle</Button>
+                        <Button size="sm" variant="outline">Sil</Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="species" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Hayvan Türleri</h4>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Yeni Tür
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 border rounded">Köpek</div>
+                    <div className="p-2 border rounded">Kedi</div>
+                    <div className="p-2 border rounded">Kuş</div>
+                    <div className="p-2 border rounded">Tavşan</div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Database Management Tab */}
+        <TabsContent value="database" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Veritabanı Durumu
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between">
+                  <span>Toplam Kayıt</span>
+                  <Badge>1,247</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span>Kullanılan Alan</span>
+                  <Badge variant="secondary">245 MB</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span>Son Yedek</span>
+                  <Badge variant="outline">2 saat önce</Badge>
+                </div>
+                <Button className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Yedek Al
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  Veri Temizleme
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Eski Logları Temizle</label>
+                  <select className="w-full p-2 border rounded">
+                    <option>30 günden eski</option>
+                    <option>60 günden eski</option>
+                    <option>90 günden eski</option>
+                  </select>
+                </div>
+                <Button className="w-full" variant="outline">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Temizle
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Tablo İstatistikleri
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Kullanıcılar</span>
+                    <Badge>2</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Evcil Hayvanlar</span>
+                    <Badge>0</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Randevular</span>
+                    <Badge>8</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Aşı Kayıtları</span>
+                    <Badge>6</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Veri İçe/Dışa Aktarma</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium">İçe Aktarma</h4>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Kullanıcı Listesi (.csv)
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Evcil Hayvan Listesi (.csv)
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Ürün Listesi (.csv)
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-medium">Dışa Aktarma</h4>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Tüm Veriler (.sql)
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Sadece Kullanıcılar (.csv)
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Rapor Verileri (.xlsx)
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Enhanced System Settings Tab */}
+        <TabsContent value="system" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Genel Ayarlar
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -518,58 +875,224 @@ function AdminPanel() {
             
             <Card>
               <CardHeader>
-                <CardTitle>Güvenlik Ayarları</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Güvenlik Ayarları
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium">Oturum Süresi (dakika)</label>
-                  <Input defaultValue="60" type="number" className="mt-1" />
+                  <Input defaultValue="60" className="mt-1" type="number" />
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium">Maksimum Giriş Denemesi</label>
-                  <Input defaultValue="5" type="number" className="mt-1" />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">İki Faktörlü Doğrulama</label>
+                  <label className="text-sm font-medium">Şifre Zorlaması</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <input type="checkbox" />
-                    <span className="text-sm">Zorunlu</span>
+                    <input type="checkbox" defaultChecked />
+                    <span className="text-sm">Güçlü şifre zorunlu</span>
                   </div>
                 </div>
                 
-                <Button className="w-full">Güvenlik Ayarlarını Kaydet</Button>
+                <div>
+                  <label className="text-sm font-medium">2FA</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="checkbox" />
+                    <span className="text-sm">İki faktörlü doğrulama</span>
+                  </div>
+                </div>
+                
+                <Button className="w-full">Güvenlik Kaydet</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  API Ayarları
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">WhatsApp API</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Bağlı</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Email Service</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Bağlı</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">PDF Service</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Bağlı</span>
+                  </div>
+                </div>
+                
+                <Button className="w-full" variant="outline">
+                  <Settings className="h-4 w-4 mr-2" />
+                  API Yapılandırması
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Sistem Monitörü
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span>Sunucu Durumu</span>
+                    <Badge className="bg-green-100 text-green-800">Çalışıyor</Badge>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Veritabanı</span>
+                    <Badge className="bg-green-100 text-green-800">Bağlı</Badge>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Bildirim Servisi</span>
+                    <Badge className="bg-green-100 text-green-800">Aktif</Badge>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span>Yedekleme Servisi</span>
+                    <Badge className="bg-yellow-100 text-yellow-800">Beklemede</Badge>
+                  </div>
+                </div>
+                
+                <Button className="w-full" variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Durumu Yenile
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Performance Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Response Time</span>
+                      <span>125ms</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Uptime</span>
+                      <span>99.9%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '99%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Error Rate</span>
+                      <span>0.1%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '5%' }}></div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* System Logs Tab */}
-        <TabsContent value="logs" className="space-y-4">
+        {/* Enhanced Logs Tab */}
+        <TabsContent value="logs" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Sistem Logları</h3>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Logları İndir
+              </Button>
+              <Button variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Yenile
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">1,247</div>
+                <div className="text-sm text-professional-gray">Toplam Log</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-red-600">12</div>
+                <div className="text-sm text-professional-gray">Hata</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">38</div>
+                <div className="text-sm text-professional-gray">Uyarı</div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">1,197</div>
+                <div className="text-sm text-professional-gray">Bilgi</div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Sistem Logları
-              </CardTitle>
+              <CardTitle>Son Loglar</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-3 max-h-96 overflow-y-auto">
                 {(systemLogs || []).map((log: any, index: number) => (
-                  <div key={index} className="flex items-start gap-3 p-2 text-sm border-b">
-                    <div className={`h-2 w-2 rounded-full mt-2 ${
-                      log.level === 'ERROR' ? 'bg-red-500' :
-                      log.level === 'WARN' ? 'bg-yellow-500' :
-                      'bg-green-500'
-                    }`}></div>
+                  <div key={index} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <Badge 
+                      variant={log.level === 'ERROR' ? 'destructive' : log.level === 'WARNING' ? 'secondary' : 'outline'}
+                      className="mt-1"
+                    >
+                      {log.level}
+                    </Badge>
                     <div className="flex-1">
-                      <div className="flex justify-between">
-                        <span className="font-mono">{log.message}</span>
-                        <span className="text-professional-gray">{log.timestamp}</span>
-                      </div>
+                      <p className="text-sm font-medium">{log.message}</p>
+                      <p className="text-xs text-professional-gray">{log.timestamp}</p>
                       {log.details && (
-                        <p className="text-professional-gray mt-1">{log.details}</p>
+                        <p className="text-xs text-professional-gray mt-1 font-mono">{log.details}</p>
                       )}
                     </div>
                   </div>

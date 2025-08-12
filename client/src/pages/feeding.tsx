@@ -353,12 +353,16 @@ export default function FeedingPage() {
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{plan.pet?.name}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {pets.find(p => p.id === plan.petId)?.name || 'Hayvan'}
+                    </CardTitle>
                     <p className="text-sm text-professional-gray">
-                      {plan.foodProduct?.name}
+                      {foodProducts.find(fp => fp.id === plan.foodProductId)?.name || 'Mama'}
                     </p>
                   </div>
-                  {getStatusBadge(plan)}
+                  <Badge variant={plan.estimatedDaysLeft && plan.estimatedDaysLeft <= 7 ? "destructive" : "secondary"}>
+                    {plan.active ? 'Aktif' : 'Pasif'}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
