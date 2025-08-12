@@ -835,6 +835,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff management routes (Admin only)
+  app.get('/api/staff', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      
+      // Only admins can access staff management
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const staff = await storage.getStaffMembers();
+      res.json(staff);
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+      res.status(500).json({ message: "Failed to fetch staff" });
+    }
+  });
+
+  app.get('/api/staff/stats', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const stats = await storage.getStaffStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching staff stats:", error);
+      res.status(500).json({ message: "Failed to fetch staff stats" });
+    }
+  });
+
+  app.get('/api/staff/:id', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const staffMember = await storage.getStaffMember(req.params.id);
+      if (!staffMember) {
+        return res.status(404).json({ message: 'Staff member not found' });
+      }
+      
+      res.json(staffMember);
+    } catch (error) {
+      console.error("Error fetching staff member:", error);
+      res.status(500).json({ message: "Failed to fetch staff member" });
+    }
+  });
+
+  app.post('/api/staff', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const staffData = req.body;
+      const newStaff = await storage.createStaffMember(staffData);
+      res.status(201).json(newStaff);
+    } catch (error) {
+      console.error("Error creating staff member:", error);
+      res.status(500).json({ message: "Failed to create staff member" });
+    }
+  });
+
+  app.put('/api/staff/:id', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      const updates = req.body;
+      const updatedStaff = await storage.updateStaffMember(req.params.id, updates);
+      res.json(updatedStaff);
+    } catch (error) {
+      console.error("Error updating staff member:", error);
+      res.status(500).json({ message: "Failed to update staff member" });
+    }
+  });
+
+  app.delete('/api/staff/:id', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      
+      if (!user || !['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(user.role!)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+
+      await storage.deleteStaffMember(req.params.id);
+      res.json({ message: 'Staff member deleted successfully' });
+    } catch (error) {
+      console.error("Error deleting staff member:", error);
+      res.status(500).json({ message: "Failed to delete staff member" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

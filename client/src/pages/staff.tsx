@@ -43,8 +43,12 @@ export default function Staff() {
   const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
 
-  const { data: staffMembers, isLoading } = useQuery({
+  const { data: staffMembers = [], isLoading } = useQuery<StaffMember[]>({
     queryKey: ['/api/staff'],
+  });
+
+  const { data: staffStats = {}, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/staff/stats'],
   });
 
   const roles = {
@@ -88,7 +92,7 @@ export default function Staff() {
     return lastLogin.toLocaleDateString('tr-TR');
   };
 
-  const filteredStaff = (staffMembers || []).filter((member: StaffMember) => {
+  const filteredStaff = staffMembers.filter((member: StaffMember) => {
     const matchesSearch = 
       member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,10 +110,15 @@ export default function Staff() {
   });
 
   // Statistics
-  const totalStaff = (staffMembers || []).length;
-  const activeStaff = (staffMembers || []).filter((member: StaffMember) => member.status === 'ACTIVE').length;
-  const veterinarians = (staffMembers || []).filter((member: StaffMember) => member.role === 'VET').length;
-  const onLeaveStaff = (staffMembers || []).filter((member: StaffMember) => member.status === 'ON_LEAVE').length;
+  const localStaffStats = {
+    totalStaff: staffMembers.length,
+    activeStaff: staffMembers.filter(s => s.status === 'ACTIVE').length,
+    veterinarians: staffMembers.filter(s => s.role === 'VET').length,
+    staffOnLeave: staffMembers.filter(s => s.status === 'ON_LEAVE').length,
+  };
+
+  // Use API stats if available, otherwise fall back to local calculation
+  const displayStats = Object.keys(staffStats).length > 0 ? staffStats : localStaffStats;
 
   if (isLoading) {
     return (
@@ -151,7 +160,7 @@ export default function Staff() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Toplam Personel</p>
-                <p className="text-2xl font-bold text-slate-800">{totalStaff}</p>
+                <p className="text-2xl font-bold text-slate-800">{displayStats.totalStaff}</p>
               </div>
               <Users className="h-8 w-8 text-medical-blue" />
             </div>
@@ -163,7 +172,7 @@ export default function Staff() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Aktif</p>
-                <p className="text-2xl font-bold text-green-600">{activeStaff}</p>
+                <p className="text-2xl font-bold text-green-600">{displayStats.activeStaff}</p>
               </div>
               <Shield className="h-8 w-8 text-green-600" />
             </div>
@@ -175,7 +184,7 @@ export default function Staff() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Veteriner</p>
-                <p className="text-2xl font-bold text-healthcare-green">{veterinarians}</p>
+                <p className="text-2xl font-bold text-healthcare-green">{displayStats.veterinarians}</p>
               </div>
               <div className="text-2xl">👨‍⚕️</div>
             </div>
@@ -187,7 +196,7 @@ export default function Staff() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">İzinli</p>
-                <p className="text-2xl font-bold text-amber-600">{onLeaveStaff}</p>
+                <p className="text-2xl font-bold text-amber-600">{displayStats.staffOnLeave || 0}</p>
               </div>
               <Clock className="h-8 w-8 text-amber-600" />
             </div>

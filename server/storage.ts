@@ -119,6 +119,14 @@ export interface IStorage {
   getUserNotifications(userId: string): Promise<Notification[]>;
   markNotificationSent(id: string): Promise<void>;
   
+  // Staff operations
+  getStaffMembers(clinicId?: string): Promise<any[]>;
+  getStaffMember(staffId: string): Promise<any | undefined>;
+  createStaffMember(staffData: any): Promise<any>;
+  updateStaffMember(staffId: string, updates: any): Promise<any>;
+  deleteStaffMember(staffId: string): Promise<void>;
+  getStaffStats(): Promise<any>;
+
   // Admin operations
   getAdminStats(): Promise<any>;
   getAllUsers(): Promise<any[]>;
@@ -1752,6 +1760,135 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return pet;
+  }
+
+  // Staff operations
+  async getStaffMembers(clinicId?: string): Promise<any[]> {
+    const staff = Array.from(this.users.values())
+      .filter(user => ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF'].includes(user.role!))
+      .map(user => {
+        const clinic = Array.from(this.clinics.values())
+          .find(c => c.ownerUserId === user.id || 
+                 Array.from(this.clinicMembers.values())
+                   .some(member => member.userId === user.id && member.clinicId === c.id));
+        
+        return {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          specialization: user.role === 'VET' ? 'Genel Veteriner' : undefined,
+          licenseNumber: user.role === 'VET' ? `VET${user.id.slice(-6)}` : undefined,
+          joinedAt: user.createdAt,
+          lastLoginAt: user.verifiedAt, // Using verifiedAt as proxy for last login
+          status: user.verifiedAt ? 'ACTIVE' : 'INACTIVE',
+          clinicId: clinic?.id,
+          clinicName: clinic?.name,
+          workingHours: user.role !== 'PET_OWNER' ? {
+            monday: '09:00-17:00',
+            tuesday: '09:00-17:00',
+            wednesday: '09:00-17:00',
+            thursday: '09:00-17:00',
+            friday: '09:00-17:00',
+            saturday: '09:00-13:00',
+            sunday: 'Kapalı'
+          } : undefined,
+          permissions: this.getUserPermissions(user.role!)
+        };
+      });
+
+    if (clinicId) {
+      return staff.filter(member => member.clinicId === clinicId);
+    }
+    
+    return staff;
+  }
+
+  async getStaffMember(staffId: string): Promise<any | undefined> {
+    const staff = await this.getStaffMembers();
+    return staff.find(member => member.id === staffId);
+  }
+
+  async createStaffMember(staffData: any): Promise<any> {
+    const newUser = await this.createUser({
+      email: staffData.email,
+      password: '$2b$10$defaulthash', // Default password - user should change on first login
+      firstName: staffData.firstName,
+      lastName: staffData.lastName,
+      phone: staffData.phone,
+      role: staffData.role,
+      verifiedAt: new Date(), // Auto-verify staff
+      whatsappOptIn: false,
+      locale: 'tr'
+    });
+
+    // Add to clinic if specified
+    if (staffData.clinicId) {
+      this.clinicMembers.set(randomUUID(), {
+        id: randomUUID(),
+        clinicId: staffData.clinicId,
+        userId: newUser.id,
+        role: staffData.role,
+        createdAt: new Date()
+      });
+    }
+
+    return this.getStaffMember(newUser.id);
+  }
+
+  async updateStaffMember(staffId: string, updates: any): Promise<any> {
+    await this.updateUserByAdmin(staffId, {
+      firstName: updates.firstName,
+      lastName: updates.lastName,
+      email: updates.email,
+      phone: updates.phone,
+      role: updates.role
+    });
+    
+    return this.getStaffMember(staffId);
+  }
+
+  async deleteStaffMember(staffId: string): Promise<void> {
+    await this.deleteUser(staffId);
+    
+    // Remove from clinic memberships
+    for (const [id, member] of this.clinicMembers.entries()) {
+      if (member.userId === staffId) {
+        this.clinicMembers.delete(id);
+      }
+    }
+  }
+
+  async getStaffStats(): Promise<any> {
+    const staff = await this.getStaffMembers();
+    
+    return {
+      totalStaff: staff.length,
+      activeStaff: staff.filter(s => s.status === 'ACTIVE').length,
+      veterinarians: staff.filter(s => s.role === 'VET').length,
+      admins: staff.filter(s => ['SUPER_ADMIN', 'CLINIC_ADMIN'].includes(s.role)).length,
+      staffOnLeave: staff.filter(s => s.status === 'ON_LEAVE').length,
+      recentJoins: staff.filter(s => 
+        new Date(s.joinedAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      ).length
+    };
+  }
+
+  private getUserPermissions(role: string): string[] {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return ['all'];
+      case 'CLINIC_ADMIN':
+        return ['manage_clinic', 'manage_staff', 'view_reports', 'manage_inventory'];
+      case 'VET':
+        return ['manage_pets', 'manage_appointments', 'manage_vaccinations', 'view_medical_records'];
+      case 'STAFF':
+        return ['view_appointments', 'manage_inventory', 'basic_operations'];
+      default:
+        return [];
+    }
   }
 
   // Stub implementations for other methods
