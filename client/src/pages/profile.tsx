@@ -10,9 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, MapPin, Phone, Mail } from "lucide-react";
+import { Loader2, User, MapPin, Phone, Mail, Heart, Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Pet } from "@shared/schema";
+import { PET_SPECIES } from "@/lib/constants";
 
 const userProfileSchema = z.object({
   firstName: z.string().min(1, 'Ad zorunludur'),
@@ -35,12 +41,25 @@ const profileDetailsSchema = z.object({
   notes: z.string().optional(),
 });
 
+const petSchema = z.object({
+  name: z.string().min(1, 'Hayvan adı zorunludur'),
+  species: z.string().min(1, 'Tür seçimi zorunludur'),
+  breed: z.string().optional(),
+  sex: z.string().optional(),
+  birthDate: z.string().optional(),
+  weightKg: z.string().optional(),
+  microchipNo: z.string().optional(),
+});
+
 type UserProfile = z.infer<typeof userProfileSchema>;
 type ProfileDetails = z.infer<typeof profileDetailsSchema>;
+type PetForm = z.infer<typeof petSchema>;
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'user' | 'details'>('user');
+  const [activeTab, setActiveTab] = useState<'user' | 'details' | 'pets'>('user');
+  const [isPetFormOpen, setIsPetFormOpen] = useState(false);
+  const [editingPet, setEditingPet] = useState<Pet | null>(null);
 
   // Fetch profile data
   const { data: profileData, isLoading } = useQuery({
@@ -52,6 +71,12 @@ export default function ProfilePage() {
       }
       return response.json();
     },
+  });
+
+  // Fetch user's pets (only for PET_OWNER role)
+  const { data: pets, isLoading: isPetsLoading } = useQuery({
+    queryKey: ["/api/pets"],
+    enabled: profileData?.user?.role === 'PET_OWNER',
   });
 
   // User profile form
@@ -80,6 +105,20 @@ export default function ProfilePage() {
       dateOfBirth: '',
       occupation: '',
       notes: '',
+    },
+  });
+
+  // Pet form
+  const petForm = useForm<PetForm>({
+    resolver: zodResolver(petSchema),
+    defaultValues: {
+      name: '',
+      species: '',
+      breed: '',
+      sex: '',
+      birthDate: '',
+      weightKg: '',
+      microchipNo: '',
     },
   });
 
@@ -148,12 +187,141 @@ export default function ProfilePage() {
     },
   });
 
+  // Create pet mutation
+  const createPetMutation = useMutation({
+    mutationFn: async (data: PetForm) => {
+      const petData = {
+        ...data,
+        weightKg: data.weightKg ? parseFloat(data.weightKg) : undefined,
+      };
+      const response = await apiRequest("POST", "/api/pets", petData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pets"] });
+      setIsPetFormOpen(false);
+      setEditingPet(null);
+      petForm.reset();
+      toast({
+        title: "Başarılı",
+        description: "Hayvan kaydı oluşturuldu",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update pet mutation
+  const updatePetMutation = useMutation({
+    mutationFn: async (data: PetForm & { id: string }) => {
+      const petData = {
+        ...data,
+        weightKg: data.weightKg ? parseFloat(data.weightKg) : undefined,
+      };
+      const response = await apiRequest("PUT", `/api/pets/${data.id}`, petData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pets"] });
+      setIsPetFormOpen(false);
+      setEditingPet(null);
+      petForm.reset();
+      toast({
+        title: "Başarılı",
+        description: "Hayvan bilgileri güncellendi",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete pet mutation
+  const deletePetMutation = useMutation({
+    mutationFn: async (petId: string) => {
+      await apiRequest("DELETE", `/api/pets/${petId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pets"] });
+      toast({
+        title: "Başarılı",
+        description: "Hayvan kaydı silindi",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Hata",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onUserSubmit = (data: UserProfile) => {
     userUpdateMutation.mutate(data);
   };
 
   const onDetailsSubmit = (data: ProfileDetails) => {
     detailsUpdateMutation.mutate(data);
+  };
+
+  const onPetSubmit = (data: PetForm) => {
+    if (editingPet) {
+      updatePetMutation.mutate({ ...data, id: editingPet.id });
+    } else {
+      createPetMutation.mutate(data);
+    }
+  };
+
+  const handleEditPet = (pet: Pet) => {
+    setEditingPet(pet);
+    petForm.reset({
+      name: pet.name,
+      species: pet.species,
+      breed: pet.breed || '',
+      sex: pet.sex || '',
+      birthDate: pet.birthDate || '',
+      weightKg: pet.weightKg ? pet.weightKg.toString() : '',
+      microchipNo: pet.microchipNo || '',
+    });
+    setIsPetFormOpen(true);
+  };
+
+  const handleDeletePet = (petId: string) => {
+    if (confirm('Bu hayvan kaydını silmek istediğinizden emin misiniz?')) {
+      deletePetMutation.mutate(petId);
+    }
+  };
+
+  const handleAddNewPet = () => {
+    setEditingPet(null);
+    petForm.reset();
+    setIsPetFormOpen(true);
+  };
+
+  const getSpeciesLabel = (species: string) => {
+    const speciesMap: { [key: string]: string } = {
+      'DOG': 'Köpek',
+      'CAT': 'Kedi', 
+      'BIRD': 'Kuş',
+      'RABBIT': 'Tavşan',
+      'HAMSTER': 'Hamster',
+      'FISH': 'Balık'
+    };
+    return speciesMap[species] || species;
+  };
+
+  const getSexLabel = (sex: string) => {
+    return sex === 'MALE' ? 'Erkek' : sex === 'FEMALE' ? 'Dişi' : sex;
   };
 
   if (isLoading) {
@@ -196,6 +364,19 @@ export default function ProfilePage() {
             <MapPin className="h-4 w-4" />
             <span>Profil Detayları</span>
           </button>
+          {profileData?.user?.role === 'PET_OWNER' && (
+            <button
+              onClick={() => setActiveTab('pets')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-md transition-colors ${
+                activeTab === 'pets'
+                  ? 'bg-medical-blue text-white'
+                  : 'text-professional-gray hover:bg-gray-100'
+              }`}
+            >
+              <Heart className="h-4 w-4" />
+              <span>Hayvanlarım</span>
+            </button>
+          )}
         </div>
 
         {/* User Profile Tab */}
@@ -490,6 +671,288 @@ export default function ProfilePage() {
               </Form>
             </CardContent>
           </Card>
+        )}
+
+        {/* Pets Tab - Only for PET_OWNER role */}
+        {activeTab === 'pets' && profileData?.user?.role === 'PET_OWNER' && (
+          <div className="space-y-6">
+            {/* Header with Add Button */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Heart className="h-5 w-5 text-medical-blue" />
+                    <span>Hayvanlarım</span>
+                  </CardTitle>
+                  <Button 
+                    onClick={handleAddNewPet}
+                    className="bg-medical-green hover:bg-medical-green/90"
+                    data-testid="button-add-pet"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Yeni Hayvan Ekle
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isPetsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-medical-blue" />
+                  </div>
+                ) : !pets || pets.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Henüz hayvan kaydınız yok</h3>
+                    <p className="text-gray-600 mb-4">İlk hayvanınızı ekleyerek başlayın</p>
+                    <Button 
+                      onClick={handleAddNewPet}
+                      className="bg-medical-blue hover:bg-medical-blue/90"
+                      data-testid="button-add-first-pet"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      İlk Hayvanımı Ekle
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pets.map((pet: Pet) => (
+                      <Card key={pet.id} className="border border-gray-200 hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-12 w-12">
+                                <AvatarImage src={pet.avatarUrl} alt={pet.name} />
+                                <AvatarFallback className="bg-medical-blue/10 text-medical-blue font-semibold">
+                                  {pet.name.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h3 className="font-semibold text-gray-900" data-testid={`text-pet-name-${pet.id}`}>{pet.name}</h3>
+                                <Badge variant="secondary" className="text-xs">
+                                  {getSpeciesLabel(pet.species)}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex space-x-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditPet(pet)}
+                                className="h-8 w-8 p-0"
+                                data-testid={`button-edit-pet-${pet.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeletePet(pet.id)}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                data-testid={`button-delete-pet-${pet.id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2 text-sm text-gray-600">
+                            {pet.breed && (
+                              <div className="flex items-center justify-between">
+                                <span>Irk:</span>
+                                <span className="font-medium">{pet.breed}</span>
+                              </div>
+                            )}
+                            {pet.sex && (
+                              <div className="flex items-center justify-between">
+                                <span>Cinsiyet:</span>
+                                <span className="font-medium">{getSexLabel(pet.sex)}</span>
+                              </div>
+                            )}
+                            {pet.birthDate && (
+                              <div className="flex items-center justify-between">
+                                <span>Doğum:</span>
+                                <span className="font-medium">
+                                  {new Date(pet.birthDate).toLocaleDateString('tr-TR')}
+                                </span>
+                              </div>
+                            )}
+                            {pet.weightKg && (
+                              <div className="flex items-center justify-between">
+                                <span>Ağırlık:</span>
+                                <span className="font-medium">{pet.weightKg} kg</span>
+                              </div>
+                            )}
+                            {pet.microchipNo && (
+                              <div className="flex items-center justify-between">
+                                <span>Çip No:</span>
+                                <span className="font-medium text-xs">{pet.microchipNo}</span>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Pet Form Dialog */}
+            <Dialog open={isPetFormOpen} onOpenChange={setIsPetFormOpen}>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingPet ? 'Hayvan Bilgilerini Düzenle' : 'Yeni Hayvan Ekle'}
+                  </DialogTitle>
+                </DialogHeader>
+                <Form {...petForm}>
+                  <form onSubmit={petForm.handleSubmit(onPetSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={petForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hayvan Adı *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Örn: Karabaş" {...field} data-testid="input-pet-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={petForm.control}
+                        name="species"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tür *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-pet-species">
+                                  <SelectValue placeholder="Tür seçin" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {PET_SPECIES.map((species) => (
+                                  <SelectItem key={species.value} value={species.value}>
+                                    {species.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={petForm.control}
+                        name="breed"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Irk</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Örn: Golden Retriever" {...field} data-testid="input-pet-breed" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={petForm.control}
+                        name="sex"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cinsiyet</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-pet-sex">
+                                  <SelectValue placeholder="Cinsiyet seçin" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="MALE">Erkek</SelectItem>
+                                <SelectItem value="FEMALE">Dişi</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={petForm.control}
+                        name="birthDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Doğum Tarihi</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} data-testid="input-pet-birth-date" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={petForm.control}
+                        name="weightKg"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ağırlık (kg)</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.1" placeholder="Örn: 15.5" {...field} data-testid="input-pet-weight" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={petForm.control}
+                      name="microchipNo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mikroçip Numarası</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Örn: 123456789012345" {...field} data-testid="input-pet-microchip" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsPetFormOpen(false)}
+                        data-testid="button-cancel-pet-form"
+                      >
+                        İptal
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="bg-medical-blue hover:bg-medical-blue/90"
+                        disabled={createPetMutation.isPending || updatePetMutation.isPending}
+                        data-testid="button-save-pet"
+                      >
+                        {(createPetMutation.isPending || updatePetMutation.isPending) && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {editingPet ? 'Güncelle' : 'Kaydet'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
     </div>

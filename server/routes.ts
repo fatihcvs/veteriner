@@ -205,6 +205,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/pets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const userId = req.user.id;
+      
+      // Check if user owns this pet or is clinic staff
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ message: "Pet not found" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (user?.role === 'PET_OWNER' && pet.ownerId !== userId) {
+        return res.status(403).json({ message: "You can only edit your own pets" });
+      }
+      
+      // Prepare data with proper types
+      const petData = {
+        ...req.body,
+        weightKg: req.body.weightKg ? String(req.body.weightKg) : undefined
+      };
+      
+      const validatedData = updatePetSchema.parse(petData);
+      const updatedPet = await storage.updatePet(petId, validatedData);
+      
+      res.json(updatedPet);
+    } catch (error) {
+      console.error("Error updating pet:", error);
+      res.status(500).json({ message: "Failed to update pet" });
+    }
+  });
+
+  app.delete('/api/pets/:id', requireAuth, async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const userId = req.user.id;
+      
+      // Check if user owns this pet or is clinic staff
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ message: "Pet not found" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (user?.role === 'PET_OWNER' && pet.ownerId !== userId) {
+        return res.status(403).json({ message: "You can only delete your own pets" });
+      }
+      
+      await storage.deletePet(petId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting pet:", error);
+      res.status(500).json({ message: "Failed to delete pet" });
+    }
+  });
+
   // Vaccination routes
   app.get('/api/vaccinations/overdue', requireAuth, async (req: any, res) => {
     try {

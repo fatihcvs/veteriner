@@ -15,6 +15,7 @@ import {
   type UpsertUser,
   type Pet,
   type InsertPet,
+  type UpdatePet,
   type Vaccine,
   type InsertVaccine,
   type VaccinationEvent,
@@ -509,13 +510,20 @@ export class MemStorage implements IStorage {
     return Array.from(this.pets.values()).filter(pet => pet.ownerId === userId);
   }
 
-  async updatePet(id: string, updates: Partial<Pet>): Promise<Pet> {
+  async updatePet(id: string, updates: UpdatePet): Promise<Pet> {
     const pet = this.pets.get(id);
     if (!pet) throw new Error('Pet not found');
     
     const updatedPet = { ...pet, ...updates, updatedAt: new Date() };
     this.pets.set(id, updatedPet);
     return updatedPet;
+  }
+
+  async deletePet(id: string): Promise<void> {
+    const pet = this.pets.get(id);
+    if (!pet) throw new Error('Pet not found');
+    
+    this.pets.delete(id);
   }
 
   // Vaccination operations

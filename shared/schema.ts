@@ -311,6 +311,8 @@ export const insertPetSchema = createInsertSchema(pets).omit({
   weightKg: z.string().optional(),
 });
 
+export const updatePetSchema = insertPetSchema.partial();
+
 export const insertVaccinationEventSchema = createInsertSchema(vaccinationEvents).omit({
   id: true,
   createdAt: true,
@@ -387,9 +389,9 @@ export const updatePetOwnerProfileSchema = insertPetOwnerProfileSchema.extend({
   notes: z.string().optional(),
 });
 
-// Type exports
-export type User = typeof users.$inferSelect;
-export type UpsertUser = typeof users.$inferInsert;
+// Type exports for form validation
+export type InsertPet = z.infer<typeof insertPetSchema>;
+export type UpdatePet = z.infer<typeof updatePetSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;

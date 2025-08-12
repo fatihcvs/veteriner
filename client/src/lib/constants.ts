@@ -9,7 +9,7 @@ export const ROLES = {
   PET_OWNER: 'PET_OWNER',
 } as const;
 
-export const PET_SPECIES = {
+export const PET_SPECIES_MAP = {
   DOG: 'Köpek',
   CAT: 'Kedi',
   BIRD: 'Kuş',
@@ -18,6 +18,16 @@ export const PET_SPECIES = {
   FISH: 'Balık',
   OTHER: 'Diğer',
 } as const;
+
+export const PET_SPECIES = [
+  { value: 'DOG', label: 'Köpek' },
+  { value: 'CAT', label: 'Kedi' },
+  { value: 'BIRD', label: 'Kuş' },
+  { value: 'RABBIT', label: 'Tavşan' },
+  { value: 'HAMSTER', label: 'Hamster' },
+  { value: 'FISH', label: 'Balık' },
+  { value: 'OTHER', label: 'Diğer' },
+];
 
 export const APPOINTMENT_TYPES = {
   CHECKUP: 'Rutin Kontrol',
