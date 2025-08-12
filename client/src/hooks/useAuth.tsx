@@ -21,11 +21,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const {
     data: user,
     isLoading,
+    error,
   } = useQuery({
     queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const response = await fetch("/api/user");
+        const response = await fetch("/api/user", {
+          credentials: 'include'
+        });
         if (response.status === 401) {
           return null;
         }
@@ -34,10 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return response.json();
       } catch (error) {
+        console.error('Auth check error:', error);
         return null;
       }
     },
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const loginMutation = useMutation({

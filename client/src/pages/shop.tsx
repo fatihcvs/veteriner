@@ -14,8 +14,12 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSpecies, setSelectedSpecies] = useState<string>('');
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, error } = useQuery({
     queryKey: ['/api/products'],
+    retry: false,
+    onError: (error: Error) => {
+      console.error('Ürünler yüklenirken hata:', error);
+    }
   });
 
   const filteredProducts = products?.filter((product: FoodProduct) => {

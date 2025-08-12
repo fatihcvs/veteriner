@@ -1,84 +1,128 @@
-import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Package } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, Bell, Clock, MessageCircle } from 'lucide-react';
 
-export default function UrgentNotifications() {
-  const { data: overdueVaccinations } = useQuery({
-    queryKey: ['/api/vaccinations/overdue'],
-  });
+interface UrgentNotification {
+  id: string;
+  type: 'VACCINATION_OVERDUE' | 'APPOINTMENT_REMINDER' | 'FEEDING_ALERT' | 'MEDICAL_URGENT';
+  message: string;
+  petName?: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  createdAt: string;
+}
 
-  const urgentNotifications = [
+interface UrgentNotificationsProps {
+  notifications?: UrgentNotification[];
+}
+
+export default function UrgentNotifications({ notifications = [] }: UrgentNotificationsProps) {
+  // Mock data for demonstration
+  const mockNotifications: UrgentNotification[] = [
     {
-      id: 'overdue-vaccinations',
-      type: 'alert',
-      title: 'Vadesi Geçen Aşılar',
-      description: `${overdueVaccinations?.length || 0} hayvan için aşı vadesi geçmiş`,
-      action: 'Detayları Gör',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200',
-      textColor: 'text-alert-red',
-      icon: AlertTriangle,
-      visible: (overdueVaccinations?.length || 0) > 0,
+      id: '1',
+      type: 'VACCINATION_OVERDUE',
+      message: 'Minnoş isimli kedinin kuduz aşısının süresi doldu',
+      petName: 'Minnoş',
+      priority: 'HIGH',
+      createdAt: new Date().toISOString(),
     },
     {
-      id: 'low-stock',
-      type: 'warning',
-      title: 'Düşük Stok Uyarısı',
-      description: '3 ürün için stok azaldı',
-      action: 'Envanter Yönet',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200',
-      textColor: 'text-orange-500',
-      icon: Package,
-      visible: true,
+      id: '2',
+      type: 'FEEDING_ALERT',
+      message: 'Karabaş için mama stoku azalıyor (3 gün kaldı)',
+      petName: 'Karabaş',
+      priority: 'MEDIUM',
+      createdAt: new Date().toISOString(),
     },
+    {
+      id: '3',
+      type: 'APPOINTMENT_REMINDER',
+      message: 'Yarın için 5 onaylanmamış randevu var',
+      priority: 'MEDIUM',
+      createdAt: new Date().toISOString(),
+    }
   ];
 
-  const visibleNotifications = urgentNotifications.filter(notification => notification.visible);
+  const activeNotifications = notifications.length > 0 ? notifications : mockNotifications;
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'VACCINATION_OVERDUE':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'APPOINTMENT_REMINDER':
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'FEEDING_ALERT':
+        return <Bell className="h-4 w-4 text-orange-500" />;
+      case 'MEDICAL_URGENT':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'HIGH':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'MEDIUM':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'LOW':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Acil Bildirimler</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center">
+          <AlertTriangle className="h-5 w-5 mr-2 text-orange-500" />
+          Acil Bildirimler
+        </CardTitle>
+        <Button variant="outline" size="sm">
+          <MessageCircle className="h-4 w-4 mr-2" />
+          Tümünü Gör
+        </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {visibleNotifications.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <i className="fas fa-check-circle text-healthcare-green text-2xl"></i>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">Her şey yolunda</h3>
-            <p className="text-professional-gray text-sm">Acil müdahale gereken durum yok.</p>
+      <CardContent>
+        {activeNotifications.length > 0 ? (
+          <div className="space-y-3">
+            {activeNotifications.slice(0, 5).map((notification) => (
+              <div
+                key={notification.id}
+                className="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="mt-0.5">
+                  {getNotificationIcon(notification.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800">
+                    {notification.message}
+                  </p>
+                  {notification.petName && (
+                    <p className="text-xs text-professional-gray mt-1">
+                      Evcil Hayvan: {notification.petName}
+                    </p>
+                  )}
+                  <p className="text-xs text-professional-gray mt-1">
+                    {new Date(notification.createdAt).toLocaleString('tr-TR')}
+                  </p>
+                </div>
+                <Badge className={getPriorityColor(notification.priority)}>
+                  {notification.priority === 'HIGH' ? 'Yüksek' : 
+                   notification.priority === 'MEDIUM' ? 'Orta' : 'Düşük'}
+                </Badge>
+              </div>
+            ))}
           </div>
         ) : (
-          visibleNotifications.map((notification) => {
-            const IconComponent = notification.icon;
-            
-            return (
-              <div 
-                key={notification.id}
-                className={`flex items-start space-x-3 p-3 rounded-lg border ${notification.bgColor} ${notification.borderColor}`}
-              >
-                <IconComponent className={`h-5 w-5 mt-1 ${notification.textColor}`} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-800">
-                    {notification.title}
-                  </p>
-                  <p className="text-xs text-professional-gray mt-1">
-                    {notification.description}
-                  </p>
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    className={`text-xs mt-2 p-0 h-auto font-medium hover:bg-transparent ${notification.textColor}`}
-                  >
-                    {notification.action}
-                  </Button>
-                </div>
-              </div>
-            );
-          })
+          <div className="text-center py-6">
+            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-2">Acil bildirim yok</p>
+            <p className="text-sm text-gray-500">Tüm sistemler normal çalışıyor</p>
+          </div>
         )}
       </CardContent>
     </Card>
