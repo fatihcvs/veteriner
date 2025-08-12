@@ -307,6 +307,8 @@ export const insertPetSchema = createInsertSchema(pets).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  weightKg: z.string().optional(),
 });
 
 export const insertVaccinationEventSchema = createInsertSchema(vaccinationEvents).omit({

@@ -186,24 +186,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/pets', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const petData = insertPetSchema.parse(req.body);
       
-      // Set owner to current user if not specified
-      if (!petData.ownerId) {
-        petData.ownerId = userId;
-      }
+      // Prepare data with proper types and defaults
+      const petData = {
+        ...req.body,
+        ownerId: req.body.ownerId || userId,
+        clinicId: req.body.clinicId || 'admin-clinic-id',
+        weightKg: req.body.weightKg ? String(req.body.weightKg) : undefined
+      };
       
-      // Get user's clinic for clinic assignment
-      const clinics = await storage.getUserClinics(userId);
-      const clinicId = clinics[0]?.id || petData.clinicId;
+      const validatedData = insertPetSchema.parse(petData);
       
-      if (!clinicId) {
-        return res.status(400).json({ message: 'No clinic assigned' });
-      }
-      
-      petData.clinicId = clinicId;
-      
-      const pet = await storage.createPet(petData);
+      const pet = await storage.createPet(validatedData);
       res.json(pet);
     } catch (error) {
       console.error("Error creating pet:", error);

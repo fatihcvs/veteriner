@@ -1,58 +1,65 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface StatsCardProps {
   title: string;
-  value: string | number;
-  change: string;
-  changeType: 'positive' | 'negative' | 'neutral';
-  icon: string;
-  color: 'medical-blue' | 'healthcare-green' | 'action-teal' | 'orange' | 'alert-red';
+  value: number | string;
+  change?: string;
+  changeType?: 'positive' | 'negative' | 'neutral';
+  icon?: string;
+  color?: string;
+  className?: string;
 }
 
 export default function StatsCard({
   title,
   value,
   change,
-  changeType,
+  changeType = 'neutral',
   icon,
-  color
+  color = 'medical-blue',
+  className,
 }: StatsCardProps) {
-  const colorClasses = {
-    'medical-blue': 'bg-medical-blue/10 text-medical-blue',
-    'healthcare-green': 'bg-healthcare-green/10 text-healthcare-green',
-    'action-teal': 'bg-action-teal/10 text-action-teal',
-    'orange': 'bg-orange-500/10 text-orange-500',
-    'alert-red': 'bg-alert-red/10 text-alert-red'
+  const getChangeColor = () => {
+    switch (changeType) {
+      case 'positive':
+        return 'text-green-600';
+      case 'negative':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
   };
 
-  const changeColorClasses = {
-    positive: 'text-healthcare-green',
-    negative: 'text-alert-red',
-    neutral: 'text-professional-gray'
-  };
-
-  const changeIconClasses = {
-    positive: 'fas fa-arrow-up',
-    negative: 'fas fa-exclamation-triangle',
-    neutral: 'fas fa-plus'
+  const getIconColor = () => {
+    switch (color) {
+      case 'medical-blue':
+        return 'text-medical-blue';
+      case 'healthcare-green':
+        return 'text-healthcare-green';
+      case 'orange':
+        return 'text-orange-500';
+      default:
+        return 'text-medical-blue';
+    }
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={cn('', className)}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-professional-gray">{title}</p>
-            <p className="text-3xl font-bold text-slate-800 mt-2">{value}</p>
-            <p className={cn("text-sm mt-1 flex items-center", changeColorClasses[changeType])}>
-              <i className={cn(changeIconClasses[changeType], "text-xs mr-1")}></i>
-              {change}
-            </p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground font-medium">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            {change && (
+              <p className={cn('text-xs', getChangeColor())}>{change}</p>
+            )}
           </div>
-          <div className={cn("p-3 rounded-lg", colorClasses[color])}>
-            <i className={cn(icon, "text-xl")}></i>
-          </div>
+          {icon && (
+            <div className={cn('text-2xl', getIconColor())}>
+              <i className={icon} />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
