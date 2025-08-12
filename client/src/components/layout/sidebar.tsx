@@ -41,10 +41,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             const isActive = location === item.href;
             return (
               <Link key={item.key} href={item.href}>
-                <a
+                <button
                   onClick={onClose}
                   className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                    "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
                     isActive
                       ? "bg-medical-blue text-white"
                       : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
@@ -57,7 +57,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                       4
                     </span>
                   )}
-                </a>
+                </button>
               </Link>
             );
           })}
@@ -71,10 +71,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               const isActive = location === item.href;
               return (
                 <Link key={item.key} href={item.href}>
-                  <a
+                  <button
                     onClick={onClose}
                     className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                      "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
                       isActive
                         ? "bg-medical-blue text-white"
                         : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
@@ -87,7 +87,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                         2
                       </span>
                     )}
-                  </a>
+                  </button>
                 </Link>
               );
             })}
@@ -102,10 +102,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               const isActive = location === item.href;
               return (
                 <Link key={item.key} href={item.href}>
-                  <a
+                  <button
                     onClick={onClose}
                     className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                      "w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left",
                       isActive
                         ? "bg-medical-blue text-white"
                         : "text-professional-gray hover:bg-slate-100 hover:text-medical-blue"
@@ -113,7 +113,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                   >
                     <i className={`${item.icon} w-5`}></i>
                     <span className="font-medium">{item.label}</span>
-                  </a>
+                  </button>
                 </Link>
               );
             })}
