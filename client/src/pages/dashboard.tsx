@@ -272,203 +272,153 @@ export default function Dashboard() {
 
 // Pet Owner Dashboard Component
 function PetOwnerDashboard({ pets, orders, appointments }: { pets: any[], orders: any[], appointments: any[] }) {
-  const totalPets = pets.length;
-  const upcomingAppointments = appointments.length;
-  const recentOrders = orders.slice(0, 3);
-  const recentPets = pets.slice(0, 2);
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-800">Hoş Geldiniz</h1>
-        <p className="text-professional-gray">Evcil hayvan bakım ve takip sisteminiz</p>
+      {/* Welcome Message */}
+      <div className="bg-gradient-to-r from-professional-navy to-medical-blue text-white p-6 rounded-lg">
+        <h2 className="text-2xl font-bold mb-2">Hoş Geldiniz!</h2>
+        <p className="text-blue-100">Evcil hayvanlarınızın sağlık bilgilerini buradan takip edebilirsiniz.</p>
       </div>
 
-      {/* Quick Stats for Pet Owners */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        <StatsCard
-          title="Hayvanlarım"
-          value={totalPets}
-          change={totalPets > 0 ? "Kayıtlı hayvan sayısı" : "Henüz hayvan eklenmemiş"}
-          changeType="neutral"
-          icon="fas fa-paw"
-          color="medical-blue"
-        />
-        <StatsCard
-          title="Yaklaşan Randevular"
-          value={upcomingAppointments}
-          change={upcomingAppointments > 0 ? "Bu hafta" : "Randevu planlanmamış"}
-          changeType={upcomingAppointments > 0 ? "positive" : "neutral"}
-          icon="fas fa-calendar-check"
-          color="healthcare-green"
-        />
-        <StatsCard
-          title="Son Siparişler"
-          value={orders.length}
-          change={orders.length > 0 ? "Toplam sipariş" : "Henüz sipariş yok"}
-          changeType="neutral"
-          icon="fas fa-shopping-cart"
-          color="action-teal"
-        />
-        <StatsCard
-          title="Bildirimler"
-          value="3"
-          change="Okunmamış bildirim"
-          changeType="neutral"
-          icon="fas fa-bell"
-          color="orange"
-        />
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
+      {/* Pet Owner Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Hızlı İşlemler</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Link href="/pets">
-              <Button className="w-full justify-start" variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Yeni Hayvan Ekle
-              </Button>
-            </Link>
-            <Link href="/appointments">
-              <Button className="w-full justify-start" variant="outline">
-                <Calendar className="h-4 w-4 mr-2" />
-                Randevu Al
-              </Button>
-            </Link>
-            <Link href="/shop">
-              <Button className="w-full justify-start" variant="outline">
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Mağazaya Git
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Recent Activities */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Son Aktiviteler</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentPets.length > 0 ? (
-                recentPets.map((pet) => (
-                  <div key={pet.id} className="flex items-start space-x-3">
-                    <div className="bg-medical-blue/10 p-2 rounded-lg">
-                      <i className="fas fa-paw text-medical-blue"></i>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-800">
-                        {pet.name} kaydı oluşturuldu
-                      </p>
-                      <p className="text-xs text-professional-gray">
-                        {new Date(pet.createdAt).toLocaleDateString('tr-TR')}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-professional-gray">Henüz aktivite bulunmuyor</p>
-                  <p className="text-sm text-professional-gray mt-1">
-                    İlk hayvanınızı ekleyerek başlayın
-                  </p>
-                </div>
-              )}
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <i className="fas fa-paw text-medical-blue text-xl"></i>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold">{pets?.length || 0}</h3>
+                <p className="text-professional-gray">Evcil Hayvanım</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* My Pets */}
         <Card>
-          <CardHeader>
-            <CardTitle>Hayvanlarım</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {totalPets > 0 ? (
-              <div className="space-y-3">
-                {recentPets.map((pet) => (
-                  <div key={pet.id} className="flex items-center space-x-3 p-2 rounded-lg border">
-                    <div className="bg-medical-blue/10 p-2 rounded-lg">
-                      <i className="fas fa-paw text-medical-blue"></i>
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-800">{pet.name}</p>
-                      <p className="text-sm text-professional-gray">{pet.species} • {pet.breed || 'Cins belirtilmemiş'}</p>
-                    </div>
-                  </div>
-                ))}
-                {totalPets > 2 && (
-                  <Link href="/pets">
-                    <Button variant="ghost" className="w-full">
-                      {totalPets - 2} hayvan daha göster
-                    </Button>
-                  </Link>
-                )}
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-lg">
+                <Calendar className="h-6 w-6 text-healthcare-green" />
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="bg-slate-100 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center mb-4">
-                  <i className="fas fa-paw text-professional-gray text-2xl"></i>
-                </div>
-                <p className="text-professional-gray mb-2">Henüz hayvan kaydınız yok</p>
-                <Link href="/pets">
-                  <Button size="sm">İlk Hayvanınızı Ekleyin</Button>
-                </Link>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold">{appointments?.length || 0}</h3>
+                <p className="text-professional-gray">Yaklaşan Randevu</p>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Recent Orders */}
         <Card>
-          <CardHeader>
-            <CardTitle>Son Siparişler</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {orders.length > 0 ? (
-              <div className="space-y-3">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-2 rounded-lg border">
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">
-                        Sipariş #{order.id.slice(-6)}
-                      </p>
-                      <p className="text-xs text-professional-gray">
-                        ₺{order.totalAmount} • {order.status}
-                      </p>
-                    </div>
-                    <div className="text-xs text-professional-gray">
-                      {new Date(order.createdAt).toLocaleDateString('tr-TR')}
-                    </div>
-                  </div>
-                ))}
-                <Link href="/orders">
-                  <Button variant="ghost" className="w-full">
-                    Tüm Siparişleri Göster
-                  </Button>
-                </Link>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-teal-100 rounded-lg">
+                <ShoppingCart className="h-6 w-6 text-action-teal" />
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="bg-slate-100 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center mb-4">
-                  <i className="fas fa-shopping-cart text-professional-gray text-2xl"></i>
-                </div>
-                <p className="text-professional-gray mb-2">Henüz siparişiniz yok</p>
-                <Link href="/shop">
-                  <Button size="sm">Mağazayı Keşfedin</Button>
-                </Link>
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold">{orders?.length || 0}</h3>
+                <p className="text-professional-gray">Siparişim</p>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* My Pets Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Evcil Hayvanlarım</CardTitle>
+          <Link href="/pets">
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Yeni Hayvan Ekle
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {pets && pets.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pets.map((pet: any) => (
+                <div key={pet.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-professional-gray/20 rounded-full flex items-center justify-center">
+                      {pet.images && pet.images.length > 0 ? (
+                        <img src={pet.images[0]} alt={pet.name} className="w-12 h-12 rounded-full object-cover" />
+                      ) : (
+                        <i className={`fas fa-${pet.species === 'DOG' ? 'dog' : pet.species === 'CAT' ? 'cat' : 'paw'} text-professional-gray`}></i>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">{pet.name}</h4>
+                      <p className="text-sm text-professional-gray">
+                        {pet.breed} • {pet.species === 'DOG' ? 'Köpek' : pet.species === 'CAT' ? 'Kedi' : pet.species === 'RABBIT' ? 'Tavşan' : pet.species === 'BIRD' ? 'Kuş' : pet.species}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 flex justify-between text-sm">
+                    <span className="text-professional-gray">Ağırlık: {pet.weightKg}kg</span>
+                    <span className="text-professional-gray">
+                      {pet.isNeutered ? 'Kısırlaştırıldı' : 'Kısırlaştırılmadı'}
+                    </span>
+                  </div>
+                  
+                  {pet.description && (
+                    <p className="mt-2 text-sm text-professional-gray">{pet.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <i className="fas fa-paw text-professional-gray text-4xl mb-4"></i>
+              <p className="text-professional-gray">Henüz kayıtlı evcil hayvanınız bulunmuyor.</p>
+              <Link href="/pets">
+                <Button className="mt-4">
+                  <Plus className="h-4 w-4 mr-2" />
+                  İlk Evcil Hayvanınızı Ekleyin
+                </Button>
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions for Pet Owner */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link href="/notifications">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-6 text-center">
+              <MessageCircle className="h-8 w-8 text-medical-blue mx-auto mb-3" />
+              <h3 className="font-semibold mb-2">WhatsApp Bildirimler</h3>
+              <p className="text-sm text-professional-gray">Aşı hatırlatmaları ve önemli bildirimler için WhatsApp'a kaydolun</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/appointments">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-6 text-center">
+              <Calendar className="h-8 w-8 text-healthcare-green mx-auto mb-3" />
+              <h3 className="font-semibold mb-2">Randevu Al</h3>
+              <p className="text-sm text-professional-gray">Veteriner kontrolü veya aşı randevusu alın</p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/shop">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-6 text-center">
+              <ShoppingCart className="h-8 w-8 text-action-teal mx-auto mb-3" />
+              <h3 className="font-semibold mb-2">Mama Siparişi</h3>
+              <p className="text-sm text-professional-gray">Evcil hayvanınız için mama ve aksesuar sipariş verin</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </div>
   );
 }
+
+

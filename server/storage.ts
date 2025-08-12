@@ -382,6 +382,224 @@ export class MemStorage implements IStorage {
     products.forEach(product => {
       this.foodProducts.set(product.id, product);
     });
+
+    // Create sample users and pets for demonstration
+    this.createSampleUsersAndPets();
+  }
+
+  private createSampleUsersAndPets() {
+    // Sample users with Turkish names
+    const sampleUsers = [
+      {
+        id: 'user1',
+        email: 'mehmet.kaya@email.com',
+        password: '78b7f6c9abf008e9b60bc50a789c4c80c30d62484c61520760e59af055744e0d1fe73161c0e2fcf8dd6af83a9b0650b5c3d9117e90e0f0f11187b9fe4c65eb31.61a87298444f26f09aa2df8684673d21',
+        firstName: 'Mehmet',
+        lastName: 'Kaya',
+        phone: '+90 532 111 1111',
+        whatsappPhone: '+90 532 111 1111',
+        whatsappOptIn: true,
+        locale: 'tr',
+        role: 'PET_OWNER',
+        verifiedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'user2',
+        email: 'ayse.demir@email.com',
+        password: '78b7f6c9abf008e9b60bc50a789c4c80c30d62484c61520760e59af055744e0d1fe73161c0e2fcf8dd6af83a9b0650b5c3d9117e90e0f0f11187b9fe4c65eb31.61a87298444f26f09aa2df8684673d21',
+        firstName: 'Ayşe',
+        lastName: 'Demir',
+        phone: '+90 533 222 2222',
+        whatsappPhone: '+90 533 222 2222',
+        whatsappOptIn: true,
+        locale: 'tr',
+        role: 'PET_OWNER',
+        verifiedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'user3',
+        email: 'can.ozkan@email.com',
+        password: '78b7f6c9abf008e9b60bc50a789c4c80c30d62484c61520760e59af055744e0d1fe73161c0e2fcf8dd6af83a9b0650b5c3d9117e90e0f0f11187b9fe4c65eb31.61a87298444f26f09aa2df8684673d21',
+        firstName: 'Can',
+        lastName: 'Özkan',
+        phone: '+90 534 333 3333',
+        whatsappPhone: '+90 534 333 3333',
+        whatsappOptIn: true,
+        locale: 'tr',
+        role: 'PET_OWNER',
+        verifiedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    // Add sample users to storage
+    sampleUsers.forEach(user => {
+      this.users.set(user.id, user);
+    });
+
+    // Sample pets with Turkish names
+    const samplePets = [
+      {
+        id: randomUUID(),
+        name: 'Karabaş',
+        species: 'DOG',
+        breed: 'Golden Retriever',
+        birthDate: '2020-05-15',
+        gender: 'MALE',
+        weightKg: '32.5',
+        isNeutered: false,
+        microchipId: 'TR001234567890',
+        ownerId: 'user1',
+        clinicId: 'admin-clinic-id',
+        images: ['https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        description: 'Çok enerjik ve sevimli bir köpek',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: 'Pamuk',
+        species: 'CAT',
+        breed: 'Ankara Kedisi',
+        birthDate: '2019-08-20',
+        gender: 'FEMALE',
+        weightKg: '4.2',
+        isNeutered: true,
+        microchipId: 'TR001234567891',
+        ownerId: 'user1',
+        clinicId: 'admin-clinic-id',
+        images: ['https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        description: 'Çok sakin ve uyumlu bir kedi',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: 'Bruno',
+        species: 'DOG',
+        breed: 'Labrador',
+        birthDate: '2021-03-10',
+        gender: 'MALE',
+        weightKg: '28.0',
+        isNeutered: false,
+        microchipId: 'TR001234567892',
+        ownerId: 'user2',
+        clinicId: 'admin-clinic-id',
+        images: ['https://images.unsplash.com/photo-1518717758536-85ae29035b6d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        description: 'Çok akıllı ve itaatkar bir köpek',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: 'Minnoş',
+        species: 'CAT',
+        breed: 'British Shorthair',
+        birthDate: '2020-12-05',
+        gender: 'FEMALE',
+        weightKg: '5.8',
+        isNeutered: true,
+        microchipId: 'TR001234567893',
+        ownerId: 'user2',
+        clinicId: 'admin-clinic-id',
+        images: ['https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        description: 'Çok sevecen ve oyuncu bir kedi',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: 'Tarçın',
+        species: 'RABBIT',
+        breed: 'Holland Lop',
+        birthDate: '2022-01-15',
+        gender: 'FEMALE',
+        weightKg: '1.8',
+        isNeutered: false,
+        microchipId: 'TR001234567894',
+        ownerId: 'user3',
+        clinicId: 'admin-clinic-id',
+        images: ['https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        description: 'Çok sevimli ve sakin bir tavşan',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: 'Cıvıl',
+        species: 'BIRD',
+        breed: 'Muhabbet Kuşu',
+        birthDate: '2023-06-01',
+        gender: 'MALE',
+        weightKg: '0.04',
+        isNeutered: false,
+        microchipId: 'TR001234567895',
+        ownerId: 'user3',
+        clinicId: 'admin-clinic-id',
+        images: ['https://images.unsplash.com/photo-1452570053594-1b985d6ea890?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        description: 'Çok konuşkan ve eğlenceli bir muhabbet kuşu',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    // Add sample pets to storage
+    samplePets.forEach(pet => {
+      this.pets.set(pet.id, pet);
+    });
+
+    // Create sample pet owner profiles
+    const sampleProfiles = [
+      {
+        id: randomUUID(),
+        userId: 'user1',
+        address: 'Bağdat Caddesi No:123, Kadıköy, İstanbul',
+        city: 'İstanbul',
+        postalCode: '34710',
+        emergencyContactName: 'Fatma Kaya',
+        emergencyContactPhone: '+90 532 111 1112',
+        veterinarianPreference: 'Dr. Ali Yılmaz',
+        notes: 'Köpek alerjisi var, dikkatli olunmalı',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        userId: 'user2',
+        address: 'Nispetiye Caddesi No:456, Levent, İstanbul',
+        city: 'İstanbul',
+        postalCode: '34330',
+        emergencyContactName: 'Mustafa Demir',
+        emergencyContactPhone: '+90 533 222 2223',
+        veterinarianPreference: 'Dr. Zeynep Kaya',
+        notes: 'Kedi ve köpek sahibi',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        userId: 'user3',
+        address: 'Atatürk Bulvarı No:789, Çankaya, Ankara',
+        city: 'Ankara',
+        postalCode: '06680',
+        emergencyContactName: 'Elif Özkan',
+        emergencyContactPhone: '+90 534 333 3334',
+        veterinarianPreference: 'Dr. Mehmet Öz',
+        notes: 'Tavşan ve kuş uzmanı tercih ediyor',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    // Add sample profiles to storage
+    sampleProfiles.forEach(profile => {
+      this.petOwnerProfiles.set(profile.id, profile);
+    });
   }
 
   // User operations
