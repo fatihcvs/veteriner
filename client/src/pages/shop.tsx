@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/common/loading-spinner';
 import ProductCard from '@/components/shop/product-card';
 import { PET_SPECIES } from '@/lib/constants';
 import { FoodProduct } from '@shared/schema';
+import CartButton from '@/components/shop/cart-button';
 
 export default function Shop() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,10 +52,7 @@ export default function Shop() {
           <p className="text-professional-gray">Evcil hayvan ürünleri ve sağlık malzemeleri</p>
         </div>
         
-        <Button variant="outline" className="flex items-center">
-          <ShoppingCart className="h-4 w-4 mr-2" />
-          Sepet (0)
-        </Button>
+        <CartButton />
       </div>
 
       {/* Filters */}
@@ -102,8 +100,8 @@ export default function Shop() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-medical-blue focus:border-medical-blue"
                 >
                   <option value="">Tüm Türler</option>
-                  {PET_SPECIES.map((species) => (
-                    <option key={species.value} value={species.value}>{species.label}</option>
+                  {Object.entries(PET_SPECIES).map(([key, value]) => (
+                    <option key={key} value={key}>{value}</option>
                   ))}
                 </select>
               </div>

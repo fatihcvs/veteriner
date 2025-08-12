@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ShoppingCart, Package, Star } from 'lucide-react';
+import { ShoppingCart, Package, Star, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PET_SPECIES } from '@/lib/constants';
 import { FoodProduct } from '@shared/schema';
+import { useCart } from '@/hooks/useCart';
 
 interface ProductCardProps {
   product: FoodProduct;
@@ -13,6 +14,15 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const { addToCart, isInCart, getItemQuantity, updateQuantity } = useCart();
+
+  const itemQuantity = getItemQuantity(product.id);
+  const isProductInCart = isInCart(product.id);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToCart(product, 1);
+  };
 
   const getStockStatus = (quantity: number) => {
     if (quantity === 0) {
@@ -84,17 +94,49 @@ export default function ProductCard({ product }: ProductCardProps) {
         </CardContent>
 
         <CardFooter className="p-4 pt-0">
-          <Button 
-            className="w-full bg-medical-blue hover:bg-medical-blue/90 text-white"
-            disabled={product.stockQty === 0}
-            onClick={(e) => {
-              e.stopPropagation();
-              // Add to cart logic here
-            }}
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            {product.stockQty === 0 ? 'Stokta Yok' : 'Sepete Ekle'}
-          </Button>
+          {isProductInCart ? (
+            <div className="flex items-center justify-between w-full" data-testid={`cart-controls-${product.id}`}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(product.id, itemQuantity - 1);
+                }}
+                disabled={itemQuantity <= 1}
+                data-testid={`button-decrease-${product.id}`}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              
+              <span className="text-lg font-medium px-4" data-testid={`text-quantity-${product.id}`}>
+                {itemQuantity}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(product.id, itemQuantity + 1);
+                }}
+                disabled={product.stockQty !== undefined && itemQuantity >= product.stockQty}
+                data-testid={`button-increase-${product.id}`}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              className="w-full bg-medical-blue hover:bg-medical-blue/90 text-white"
+              disabled={product.stockQty === 0}
+              onClick={handleAddToCart}
+              data-testid={`button-add-to-cart-${product.id}`}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              {product.stockQty === 0 ? 'Stokta Yok' : 'Sepete Ekle'}
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
@@ -170,13 +212,40 @@ export default function ProductCard({ product }: ProductCardProps) {
                 )}
 
                 <div className="space-y-2">
-                  <Button 
-                    className="w-full bg-medical-blue hover:bg-medical-blue/90 text-white"
-                    disabled={product.stockQty === 0}
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    {product.stockQty === 0 ? 'Stokta Yok' : 'Sepete Ekle'}
-                  </Button>
+                  {isProductInCart ? (
+                    <div className="flex items-center justify-between p-2 border rounded-lg">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(product.id, itemQuantity - 1)}
+                        disabled={itemQuantity <= 1}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      
+                      <span className="text-lg font-medium px-4">
+                        {itemQuantity} adet sepette
+                      </span>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateQuantity(product.id, itemQuantity + 1)}
+                        disabled={product.stockQty !== undefined && itemQuantity >= product.stockQty}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      className="w-full bg-medical-blue hover:bg-medical-blue/90 text-white"
+                      disabled={product.stockQty === 0}
+                      onClick={() => addToCart(product, 1)}
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      {product.stockQty === 0 ? 'Stokta Yok' : 'Sepete Ekle'}
+                    </Button>
+                  )}
                   
                   <Button variant="outline" className="w-full">
                     <Package className="h-4 w-4 mr-2" />
