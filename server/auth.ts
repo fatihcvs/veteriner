@@ -39,6 +39,7 @@ export function setupAuth(app: Express) {
     store: new PostgresSessionStore({
       conString: process.env.DATABASE_URL,
       createTableIfMissing: false,
+      tableName: 'sessions',
     }),
     cookie: {
       httpOnly: true,
@@ -76,9 +77,13 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: string, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (error) {
-      done(error);
+      console.error('Deserialize user error:', error);
+      done(null, false);
     }
   });
 

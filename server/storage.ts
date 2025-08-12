@@ -33,6 +33,18 @@ import {
   type UpdatePetOwnerProfile,
 } from '@shared/schema';
 import { randomUUID } from 'crypto';
+import { db } from './db';
+import { eq, sql, desc } from 'drizzle-orm';
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
 // Interface for storage operations
 export interface IStorage {
@@ -722,4 +734,291 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database implementation
+export class DatabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: randomUUID(),
+        ...userData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.email,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: UpdateUserProfile): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  // Profile operations
+  async getUserProfile(userId: string): Promise<PetOwnerProfile | undefined> {
+    const [profile] = await db.select().from(petOwnerProfiles).where(eq(petOwnerProfiles.userId, userId));
+    return profile;
+  }
+
+  async createUserProfile(userId: string, profileData: UpdatePetOwnerProfile): Promise<PetOwnerProfile> {
+    const [profile] = await db
+      .insert(petOwnerProfiles)
+      .values({
+        id: randomUUID(),
+        userId,
+        ...profileData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return profile;
+  }
+
+  async updateUserProfile(userId: string, profileData: UpdatePetOwnerProfile): Promise<PetOwnerProfile> {
+    const existing = await this.getUserProfile(userId);
+    if (existing) {
+      const [profile] = await db
+        .update(petOwnerProfiles)
+        .set({ ...profileData, updatedAt: new Date() })
+        .where(eq(petOwnerProfiles.userId, userId))
+        .returning();
+      return profile;
+    } else {
+      return this.createUserProfile(userId, profileData);
+    }
+  }
+
+  // Food products
+  async getFoodProducts(): Promise<FoodProduct[]> {
+    return await db.select().from(foodProducts).orderBy(desc(foodProducts.createdAt));
+  }
+
+  async getFoodProduct(id: string): Promise<FoodProduct | undefined> {
+    const [product] = await db.select().from(foodProducts).where(eq(foodProducts.id, id));
+    return product;
+  }
+
+  async createFoodProduct(productData: InsertFoodProduct): Promise<FoodProduct> {
+    const [product] = await db
+      .insert(foodProducts)
+      .values({
+        id: randomUUID(),
+        ...productData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return product;
+  }
+
+  // Pets
+  async getPet(id: string): Promise<Pet | undefined> {
+    const [pet] = await db.select().from(pets).where(eq(pets.id, id));
+    return pet;
+  }
+
+  async getUserPets(userId: string): Promise<Pet[]> {
+    return await db.select().from(pets).where(eq(pets.ownerId, userId));
+  }
+
+  async createPet(petData: InsertPet): Promise<Pet> {
+    const [pet] = await db
+      .insert(pets)
+      .values({
+        id: randomUUID(),
+        ...petData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return pet;
+  }
+
+  async updatePet(id: string, updates: any): Promise<Pet> {
+    const [pet] = await db
+      .update(pets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(pets.id, id))
+      .returning();
+    return pet;
+  }
+
+  async deletePet(id: string): Promise<void> {
+    await db.delete(pets).where(eq(pets.id, id));
+  }
+
+  // Stub implementations for other methods
+  async getClinic(id: string): Promise<any> { return null; }
+  async createClinic(data: any): Promise<any> { return null; }
+  async getUserClinics(userId: string): Promise<any[]> { return []; }
+  async getVaccines(): Promise<Vaccine[]> { return []; }
+  async getVaccine(id: string): Promise<Vaccine | undefined> { return undefined; }
+  async createVaccine(data: InsertVaccine): Promise<Vaccine> { throw new Error('Not implemented'); }
+  async updateVaccine(id: string, updates: any): Promise<Vaccine> { throw new Error('Not implemented'); }
+  async deleteVaccine(id: string): Promise<void> {}
+  async getPetVaccinations(petId: string): Promise<VaccinationEvent[]> { return []; }
+  async createVaccinationEvent(data: InsertVaccinationEvent): Promise<VaccinationEvent> { throw new Error('Not implemented'); }
+  async updateVaccinationEvent(id: string, updates: any): Promise<VaccinationEvent> { throw new Error('Not implemented'); }
+  async deleteVaccinationEvent(id: string): Promise<void> {}
+  async updateFoodProduct(id: string, updates: any): Promise<FoodProduct> { throw new Error('Not implemented'); }
+  async deleteFoodProduct(id: string): Promise<void> {}
+  async getOrders(userId?: string): Promise<Order[]> { return []; }
+  async getOrder(id: string): Promise<Order | undefined> { return undefined; }
+  async createOrder(data: InsertOrder): Promise<Order> { throw new Error('Not implemented'); }
+  async updateOrder(id: string, updates: any): Promise<Order> { throw new Error('Not implemented'); }
+  async deleteOrder(id: string): Promise<void> {}
+  async getAppointments(clinicId?: string): Promise<Appointment[]> { return []; }
+  async getClinicAppointments(clinicId: string): Promise<Appointment[]> { return []; }
+  async getUserAppointments(userId: string): Promise<Appointment[]> { return []; }
+  async getAppointment(id: string): Promise<Appointment | undefined> { return undefined; }
+  async createAppointment(data: InsertAppointment): Promise<Appointment> { throw new Error('Not implemented'); }
+  async updateAppointment(id: string, updates: any): Promise<Appointment> { throw new Error('Not implemented'); }
+  async deleteAppointment(id: string): Promise<void> {}
+  async getNotifications(userId: string): Promise<Notification[]> { return []; }
+  async createNotification(data: InsertNotification): Promise<Notification> { throw new Error('Not implemented'); }
+  async markNotificationRead(id: string): Promise<void> {}
+  async deleteNotification(id: string): Promise<void> {}
+  async getFeedingPlans(petId: string): Promise<any[]> { return []; }
+  async createFeedingPlan(data: any): Promise<any> { throw new Error('Not implemented'); }
+  async updateFeedingPlan(id: string, updates: any): Promise<any> { throw new Error('Not implemented'); }
+  async deleteFeedingPlan(id: string): Promise<void> {}
+  async getPetMedicalRecords(petId: string): Promise<any[]> { return []; }
+  async createMedicalRecord(data: any): Promise<any> { throw new Error('Not implemented'); }
+  async updateMedicalRecord(id: string, updates: any): Promise<any> { throw new Error('Not implemented'); }
+  async deleteMedicalRecord(id: string): Promise<void> {}
+}
+
+// Initialize database storage and seed data
+export const storage = new DatabaseStorage();
+
+// Seed initial data
+async function seedData() {
+  try {
+    // Check if admin user exists
+    const adminUser = await storage.getUserByEmail('admin@vettrack.pro');
+    if (!adminUser) {
+      console.log('Creating admin user...');
+      await storage.createUser({
+        email: 'admin@vettrack.pro',
+        password: await hashPassword('admin123'),
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'SUPER_ADMIN',
+        phone: '+90555123456',
+        whatsappPhone: '+90555123456',
+        whatsappOptIn: true,
+        locale: 'tr',
+        verifiedAt: new Date(),
+      });
+    }
+
+    // Check if products exist
+    const existingProducts = await storage.getFoodProducts();
+    if (existingProducts.length === 0) {
+      console.log('Adding trending pet products...');
+      
+      const trendingProducts = [
+        {
+          name: 'Akıllı Otomatik Besleyici Pro',
+          brand: 'PetSafe',
+          packageSizeGrams: null,
+          species: 'DOG',
+          sku: 'PS-SMART-FEEDER-PRO',
+          price: '899.00',
+          stockQty: 15,
+          description: 'Akıllı telefon uygulaması ile kontrol edilebilen otomatik besleyici. Portion kontrolü, zamanlayıcı ve video kamera özellikli.',
+          images: ['https://images.unsplash.com/photo-1623387641168-d9803ddd3f35?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+          clinicId: null,
+        },
+        {
+          name: 'Premium Organik Köpek Maması',
+          brand: 'The Farmer\'s Dog',
+          packageSizeGrams: 12000,
+          species: 'DOG',
+          sku: 'TFD-ORGANIC-PREMIUM-12KG',
+          price: '680.00',
+          stockQty: 25,
+          description: 'Taze, organik malzemelerle hazırlanmış premium köpek maması. Tahılsız, yüksek protein içerikli.',
+          images: ['https://images.unsplash.com/photo-1589924691995-400dc9ecc119?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+          clinicId: null,
+        },
+        {
+          name: 'İnteraktif Puzzle Oyuncak Seti',
+          brand: 'Nina Ottosson',
+          packageSizeGrams: 800,
+          species: 'DOG',
+          sku: 'NO-PUZZLE-SET-ADV',
+          price: '289.00',
+          stockQty: 35,
+          description: 'Zihinsel stimülasyon sağlayan interaktif puzzle oyuncak seti. 3 farklı zorluk seviyesi.',
+          images: ['https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+          clinicId: null,
+        },
+        {
+          name: 'GPS Takip Akıllı Tasma',
+          brand: 'Whistle Go',
+          packageSizeGrams: 150,
+          species: 'DOG',
+          sku: 'WG-GPS-TRACKER-V3',
+          price: '1250.00',
+          stockQty: 18,
+          description: 'Real-time GPS takip, aktivite monitörü ve sağlık takibi özellikli akıllı tasma.',
+          images: ['https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+          clinicId: null,
+        },
+        {
+          name: 'Premium Kedi Yaş Maması Çeşit Paketi',
+          brand: 'Sheba Perfect Portions',
+          packageSizeGrams: 2400,
+          species: 'CAT',
+          sku: 'SPP-VARIETY-PACK-24',
+          price: '189.00',
+          stockQty: 40,
+          description: '24 adet çeşitli lezzetlerde premium kedi yaş maması. Porsiyon kontrollü paketlerde.',
+          images: ['https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+          clinicId: null,
+        },
+      ];
+
+      for (const product of trendingProducts) {
+        await storage.createFoodProduct(product);
+      }
+    }
+
+    console.log('Database seeding completed successfully');
+  } catch (error) {
+    console.error('Error seeding data:', error);
+  }
+}
+
+// Run seed data
+seedData();

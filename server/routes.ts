@@ -307,13 +307,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get('/api/products', requireAuth, async (req: any, res) => {
+  app.get('/api/products', async (req, res) => {
     try {
-      const userId = req.user.id;
-      const clinics = await storage.getUserClinics(userId);
-      const clinicId = clinics[0]?.id;
-      
-      const products = await storage.getFoodProducts(clinicId);
+      const products = await storage.getFoodProducts();
       res.json(products);
     } catch (error) {
       console.error("Error fetching products:", error);
