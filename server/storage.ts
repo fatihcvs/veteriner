@@ -732,6 +732,165 @@ export class MemStorage implements IStorage {
     sampleVaccinations.forEach(vaccination => {
       this.vaccinationEvents.set(vaccination.id, vaccination);
     });
+
+    // Create sample notifications
+    const sampleNotifications = [
+      {
+        id: 'notification-1',
+        userId: 'user-owner-1', // Ahmet Yılmaz
+        clinicId: 'main-clinic-id',
+        type: 'VACCINATION_REMINDER',
+        title: 'Aşı Hatırlatması - Karabaş',
+        body: 'Sevgili Ahmet Bey, köpeğiniz Karabaş için kuduz aşısının zamanı geldi. Lütfen 5 gün içinde kliniğimize gelmenizi rica ederiz.',
+        channels: ['WHATSAPP', 'EMAIL', 'IN_APP'],
+        scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+        status: 'PENDING',
+        meta: {
+          petName: 'Karabaş',
+          vaccineType: 'Kuduz',
+          petId: 'pet-1'
+        },
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      },
+      {
+        id: 'notification-2',
+        userId: 'user-owner-2', // Zeynep Demir
+        clinicId: 'main-clinic-id',
+        type: 'APPOINTMENT_REMINDER',
+        title: 'Randevu Hatırlatması - Pamuk',
+        body: 'Merhaba Zeynep Hanım, kedişiniz Pamuk için yarın saat 14:00\'te randevunuz bulunmaktadır. Kontrol muayenesi için bekleriz.',
+        channels: ['WHATSAPP', 'EMAIL', 'IN_APP'],
+        scheduledFor: new Date(Date.now() + 18 * 60 * 60 * 1000), // 18 hours from now
+        status: 'SENT',
+        sentAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+        meta: {
+          petName: 'Pamuk',
+          appointmentDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          appointmentTime: '14:00',
+          petId: 'pet-2'
+        },
+        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+        updatedAt: new Date(Date.now() - 30 * 60 * 1000),
+      },
+      {
+        id: 'notification-3',
+        userId: 'user-owner-3', // Mehmet Kaya
+        clinicId: 'main-clinic-id',
+        type: 'FOOD_DEPLETION',
+        title: 'Mama Stoku Azalıyor - Bruno',
+        body: 'Merhaba Mehmet Bey, köpeğiniz Bruno için sipariş ettiğiniz Royal Canin mama stokunuz %20 seviyesine düştü. Yeni sipariş vermek ister misiniz?',
+        channels: ['WHATSAPP', 'EMAIL', 'IN_APP'],
+        scheduledFor: new Date(Date.now() + 12 * 60 * 60 * 1000), // 12 hours from now
+        status: 'PENDING',
+        meta: {
+          petName: 'Bruno',
+          foodProduct: 'Royal Canin Adult',
+          stockLevel: 20,
+          petId: 'pet-3'
+        },
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
+        updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      },
+      {
+        id: 'notification-4',
+        userId: 'user-owner-4', // Fatma Öz
+        clinicId: 'main-clinic-id',
+        type: 'ORDER_UPDATE',
+        title: 'Sipariş Kargoya Verildi',
+        body: 'Merhaba Fatma Hanım, #3 numaralı siparişiniz kargoya verilmiştir. Kargo takip numaranız: TR123456789. Tahmini teslimat süresi 2-3 iş günüdür.',
+        channels: ['WHATSAPP', 'EMAIL', 'IN_APP'],
+        scheduledFor: new Date(),
+        status: 'SENT',
+        sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        meta: {
+          orderNumber: '3',
+          trackingNumber: 'TR123456789',
+          deliveryEstimate: '2-3 iş günü',
+          orderId: 'order-3'
+        },
+        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      },
+      {
+        id: 'notification-5',
+        userId: 'admin-user-id', // Admin user
+        clinicId: 'main-clinic-id',
+        type: 'SYSTEM',
+        title: 'Sistem Güncellemesi',
+        body: 'VetTrack Pro sistemimiz bu gece 02:00-04:00 arası güncellenecektir. Bu süre zarfında sisteme erişim sınırlı olabilir.',
+        channels: ['EMAIL', 'IN_APP'],
+        scheduledFor: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
+        status: 'PENDING',
+        meta: {
+          maintenanceStart: new Date(Date.now() + 8 * 60 * 60 * 1000),
+          maintenanceEnd: new Date(Date.now() + 10 * 60 * 60 * 1000),
+          affectedServices: ['web', 'mobile']
+        },
+        createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+        updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      },
+      {
+        id: 'notification-6',
+        userId: 'user-owner-5', // Ayşe Çelik
+        clinicId: 'main-clinic-id',
+        type: 'CUSTOM',
+        title: 'Kış Bakım Önerileri',
+        body: 'Sevgili Ayşe Hanım, kuşunuz Minnoş için kış aylarında dikkat edilmesi gereken hususlar hakkında bilgilendirme broşürümüzü randevunuzda size vereceğiz.',
+        channels: ['WHATSAPP', 'EMAIL', 'IN_APP'],
+        scheduledFor: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours from now
+        status: 'PENDING',
+        meta: {
+          petName: 'Minnoş',
+          petSpecies: 'BIRD',
+          seasonalCare: 'winter',
+          petId: 'pet-5'
+        },
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+        updatedAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
+      },
+      // Add notifications for admin user
+      {
+        id: 'notification-admin-1',
+        userId: 'admin-user-id', // Admin user
+        clinicId: 'main-clinic-id',
+        type: 'SYSTEM',
+        title: 'Günlük Rapor Hazır',
+        body: 'Bugünün hasta raporu hazır. 8 randevu tamamlandı, 3 yeni kayıt oluşturuldu.',
+        channels: ['EMAIL', 'IN_APP'],
+        scheduledFor: new Date(),
+        status: 'SENT',
+        sentAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+        meta: {
+          appointmentsCompleted: 8,
+          newRegistrations: 3,
+          reportType: 'daily'
+        },
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+        updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      },
+      {
+        id: 'notification-admin-2',
+        userId: 'admin-user-id', // Admin user
+        clinicId: 'main-clinic-id',
+        type: 'VACCINATION_REMINDER',
+        title: 'Toplu Aşı Hatırlatması',
+        body: 'Bu hafta 5 hastanın aşı zamanı geldi. Detaylar için aşı takip bölümünü kontrol edin.',
+        channels: ['EMAIL', 'IN_APP'],
+        scheduledFor: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+        status: 'PENDING',
+        meta: {
+          petsCount: 5,
+          weeklyReminder: true
+        },
+        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+        updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+      }
+    ];
+
+    sampleNotifications.forEach(notification => {
+      this.notifications.set(notification.id, notification);
+    });
   }
 
   // User operations

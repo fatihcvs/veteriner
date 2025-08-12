@@ -17,21 +17,18 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Notification {
   id: string;
-  type: 'VACCINATION_REMINDER' | 'APPOINTMENT_REMINDER' | 'FOOD_DEPLETION' | 'SYSTEM' | 'CUSTOM';
+  userId: string;
+  clinicId?: string;
+  type: 'VACCINATION_REMINDER' | 'APPOINTMENT_REMINDER' | 'FOOD_DEPLETION' | 'SYSTEM' | 'CUSTOM' | 'ORDER_UPDATE';
   title: string;
-  message: string;
-  recipientType: 'SPECIFIC_USER' | 'ALL_OWNERS' | 'ALL_STAFF' | 'ROLE_BASED';
-  recipientId?: string;
-  recipientName?: string;
-  channel: 'WHATSAPP' | 'EMAIL' | 'SMS' | 'PUSH';
+  body: string;
+  channels: string[];
   status: 'PENDING' | 'SENT' | 'DELIVERED' | 'FAILED' | 'CANCELLED';
   scheduledFor?: string;
   sentAt?: string;
-  deliveredAt?: string;
-  errorMessage?: string;
+  meta?: any;
   createdAt: string;
-  petName?: string;
-  appointmentDate?: string;
+  updatedAt: string;
 }
 
 export default function Notifications() {
@@ -43,7 +40,7 @@ export default function Notifications() {
   const [isComposeOpen, setIsComposeOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: notifications, isLoading } = useQuery({
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
   });
 
@@ -51,6 +48,7 @@ export default function Notifications() {
     'VACCINATION_REMINDER': { label: 'Aşı Hatırlatması', color: 'bg-green-100 text-green-800', icon: '💉' },
     'APPOINTMENT_REMINDER': { label: 'Randevu Hatırlatması', color: 'bg-blue-100 text-blue-800', icon: '📅' },
     'FOOD_DEPLETION': { label: 'Mama Uyarısı', color: 'bg-orange-100 text-orange-800', icon: '🥘' },
+    'ORDER_UPDATE': { label: 'Sipariş Güncellemesi', color: 'bg-teal-100 text-teal-800', icon: '📦' },
     'SYSTEM': { label: 'Sistem', color: 'bg-purple-100 text-purple-800', icon: '⚙️' },
     'CUSTOM': { label: 'Özel Mesaj', color: 'bg-gray-100 text-gray-800', icon: '✉️' },
   };
@@ -60,6 +58,7 @@ export default function Notifications() {
     'EMAIL': { label: 'E-posta', color: 'bg-blue-100 text-blue-800', icon: '📧' },
     'SMS': { label: 'SMS', color: 'bg-yellow-100 text-yellow-800', icon: '💬' },
     'PUSH': { label: 'Push', color: 'bg-purple-100 text-purple-800', icon: '🔔' },
+    'IN_APP': { label: 'Uygulama', color: 'bg-gray-100 text-gray-800', icon: '📱' },
   };
 
   const getStatusColor = (status: string) => {
@@ -87,13 +86,12 @@ export default function Notifications() {
   const filteredNotifications = (notifications || []).filter((notification: Notification) => {
     const matchesSearch = 
       notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.recipientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.petName?.toLowerCase().includes(searchTerm.toLowerCase());
+      notification.body.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (notification.meta?.petName && notification.meta.petName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesType = !selectedType || notification.type === selectedType;
     const matchesStatus = !selectedStatus || notification.status === selectedStatus;
-    const matchesChannel = !selectedChannel || notification.channel === selectedChannel;
+    const matchesChannel = !selectedChannel || (notification.channels && notification.channels.includes(selectedChannel));
     
     let matchesTab = true;
     if (activeTab === 'pending') matchesTab = notification.status === 'PENDING';
@@ -320,22 +318,21 @@ export default function Notifications() {
                           <Badge className={notificationTypes[notification.type].color}>
                             {notificationTypes[notification.type].label}
                           </Badge>
-                          <Badge className={channels[notification.channel].color}>
-                            {channels[notification.channel].icon} {channels[notification.channel].label}
-                          </Badge>
+                          {notification.channels?.map((channel: string, index: number) => (
+                            <Badge key={index} className={channels[channel]?.color || 'bg-gray-100 text-gray-800'}>
+                              {channels[channel]?.icon || '📱'} {channels[channel]?.label || channel}
+                            </Badge>
+                          ))}
                           <Badge className={getStatusColor(notification.status)}>
                             {getStatusLabel(notification.status)}
                           </Badge>
                         </div>
                         
-                        <p className="text-professional-gray">{notification.message}</p>
+                        <p className="text-professional-gray">{notification.body}</p>
                         
                         <div className="flex items-center gap-4 text-sm text-professional-gray">
-                          {notification.recipientName && (
-                            <span>Alıcı: {notification.recipientName}</span>
-                          )}
-                          {notification.petName && (
-                            <span>Hayvan: {notification.petName}</span>
+                          {notification.meta?.petName && (
+                            <span>Hayvan: {notification.meta.petName}</span>
                           )}
                           <span>
                             Oluşturulma: {format(new Date(notification.createdAt), 'dd MMMM yyyy HH:mm', { locale: tr })}
@@ -346,15 +343,7 @@ export default function Notifications() {
                             </span>
                           )}
                         </div>
-                        
-                        {notification.errorMessage && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                            <p className="text-sm text-red-700">
-                              <AlertTriangle className="h-4 w-4 inline mr-1" />
-                              {notification.errorMessage}
-                            </p>
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     
