@@ -166,6 +166,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let pets;
       if (user.role === 'PET_OWNER') {
         pets = await storage.getUserPets(userId);
+      } else if (user.role === 'SUPER_ADMIN') {
+        // Super admin can see all pets
+        pets = await storage.getAllPetsWithOwners();
       } else {
         // Clinic staff - get pets for their clinic
         const clinics = await storage.getUserClinics(userId);

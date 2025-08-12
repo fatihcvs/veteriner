@@ -1,6 +1,7 @@
 import {
   users,
   clinics,
+  clinicMembers,
   pets,
   vaccines,
   vaccinationEvents,
@@ -35,7 +36,7 @@ import {
 } from '@shared/schema';
 import { randomUUID } from 'crypto';
 import { db } from './db';
-import { eq, sql, desc, and, gte, lt } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, lt, or } from 'drizzle-orm';
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
@@ -1246,6 +1247,37 @@ export class DatabaseStorage implements IStorage {
 
   async getUserPets(userId: string): Promise<Pet[]> {
     return await db.select().from(pets).where(eq(pets.ownerId, userId));
+  }
+
+  async getClinicPets(clinicId: string): Promise<Pet[]> {
+    return await db.select().from(pets).where(eq(pets.clinicId, clinicId));
+  }
+
+  async getUserClinics(userId: string): Promise<any[]> {
+    // Get user's clinics through clinic_members or if user is clinic owner
+    const userClinics = await db
+      .select({
+        id: clinics.id,
+        name: clinics.name,
+        address: clinics.address,
+        phone: clinics.phone,
+      })
+      .from(clinics)
+      .leftJoin(clinicMembers, eq(clinics.id, clinicMembers.clinicId))
+      .where(
+        or(
+          eq(clinics.ownerUserId, userId),
+          eq(clinicMembers.userId, userId)
+        )
+      );
+    
+    // If no clinics found, return the default clinic
+    if (userClinics.length === 0) {
+      const defaultClinics = await db.select().from(clinics).limit(1);
+      return defaultClinics;
+    }
+    
+    return userClinics;
   }
 
   async createPet(petData: InsertPet): Promise<Pet> {
