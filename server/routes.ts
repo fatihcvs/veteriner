@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, requireAuth } from "./auth";
-import { insertPetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema } from "@shared/schema";
+import { insertPetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema, updateUserProfileSchema, updatePetOwnerProfileSchema } from "@shared/schema";
 import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
 import { pdfService } from "./services/pdf";
@@ -56,6 +56,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Profile endpoints
+  app.get('/api/profile', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const profile = await storage.getUserProfile(userId);
+      
+      res.json({
+        user: {
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          email: user?.email,
+          phone: user?.phone,
+          whatsappPhone: user?.whatsappPhone,
+          whatsappOptIn: user?.whatsappOptIn,
+        },
+        profile: profile || null,
+      });
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Profil bilgileri alınamadı" });
+    }
+  });
+
+  app.put('/api/profile/user', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const validatedData = updateUserProfileSchema.parse(req.body);
+      
+      const updatedUser = await storage.updateUser(userId, validatedData);
+      res.json({ success: true, user: updatedUser });
+    } catch (error: any) {
+      console.error("Error updating user profile:", error);
+      res.status(400).json({ message: error.message || "Kullanıcı profili güncellenemedi" });
+    }
+  });
+
+  app.put('/api/profile/details', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const validatedData = updatePetOwnerProfileSchema.parse(req.body);
+      
+      const updatedProfile = await storage.updateUserProfile(userId, validatedData);
+      res.json({ success: true, profile: updatedProfile });
+    } catch (error: any) {
+      console.error("Error updating profile details:", error);
+      res.status(400).json({ message: error.message || "Profil detayları güncellenemedi" });
     }
   });
 

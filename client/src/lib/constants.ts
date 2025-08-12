@@ -122,6 +122,12 @@ export const ECOMMERCE_ITEMS = [
 
 export const MANAGEMENT_ITEMS = [
   {
+    key: 'profile',
+    label: 'Profil',
+    icon: 'fas fa-user-circle',
+    href: '/profile',
+  },
+  {
     key: 'staff',
     label: 'Personel',
     icon: 'fas fa-user-md',

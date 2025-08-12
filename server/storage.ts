@@ -10,6 +10,7 @@ import {
   orderItems,
   notifications,
   appointments,
+  petOwnerProfiles,
   type User,
   type UpsertUser,
   type Pet,
@@ -26,6 +27,10 @@ import {
   type InsertAppointment,
   type Notification,
   type InsertNotification,
+  type PetOwnerProfile,
+  type InsertPetOwnerProfile,
+  type UpdateUserProfile,
+  type UpdatePetOwnerProfile,
 } from '@shared/schema';
 import { randomUUID } from 'crypto';
 
@@ -36,6 +41,12 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, updates: UpdateUserProfile): Promise<User>;
+  
+  // Profile operations
+  getUserProfile(userId: string): Promise<PetOwnerProfile | undefined>;
+  createUserProfile(userId: string, profile: UpdatePetOwnerProfile): Promise<PetOwnerProfile>;
+  updateUserProfile(userId: string, profile: UpdatePetOwnerProfile): Promise<PetOwnerProfile>;
   
   // Clinic operations
   getClinic(id: string): Promise<any | undefined>;
@@ -91,6 +102,7 @@ export class MemStorage implements IStorage {
   private users = new Map<string, User>();
   private clinics = new Map<string, any>();
   private clinicMembers = new Map<string, any>();
+  private petOwnerProfiles = new Map<string, PetOwnerProfile>();
   private pets = new Map<string, Pet>();
   private vaccines = new Map<string, Vaccine>();
   private vaccinationEvents = new Map<string, VaccinationEvent>();
@@ -231,6 +243,46 @@ export class MemStorage implements IStorage {
       } as User;
       this.users.set(newUser.id, newUser);
       return newUser;
+    }
+  }
+
+  async updateUser(id: string, updates: UpdateUserProfile): Promise<User> {
+    const user = this.users.get(id);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    const updatedUser = { ...user, ...updates, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Profile operations
+  async getUserProfile(userId: string): Promise<PetOwnerProfile | undefined> {
+    return Array.from(this.petOwnerProfiles.values()).find(p => p.userId === userId);
+  }
+
+  async createUserProfile(userId: string, profile: UpdatePetOwnerProfile): Promise<PetOwnerProfile> {
+    const newProfile: PetOwnerProfile = {
+      id: randomUUID(),
+      userId,
+      ...profile,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.petOwnerProfiles.set(newProfile.id, newProfile);
+    return newProfile;
+  }
+
+  async updateUserProfile(userId: string, profile: UpdatePetOwnerProfile): Promise<PetOwnerProfile> {
+    const existingProfile = await this.getUserProfile(userId);
+    
+    if (existingProfile) {
+      const updatedProfile = { ...existingProfile, ...profile, updatedAt: new Date() };
+      this.petOwnerProfiles.set(existingProfile.id, updatedProfile);
+      return updatedProfile;
+    } else {
+      return this.createUserProfile(userId, profile);
     }
   }
 

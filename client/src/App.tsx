@@ -14,6 +14,7 @@ import Feeding from "@/pages/feeding";
 import Shop from "@/pages/shop";
 import Orders from "@/pages/orders";
 import Settings from "@/pages/settings";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 import AppLayout from "@/components/layout/app-layout";
 
@@ -36,6 +37,7 @@ function Router() {
           <Route path="/feeding" component={Feeding} />
           <Route path="/shop" component={Shop} />
           <Route path="/orders" component={Orders} />
+          <Route path="/profile" component={Profile} />
           <Route path="/settings" component={Settings} />
         </AppLayout>
       )}

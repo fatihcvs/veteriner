@@ -74,6 +74,15 @@ export const petOwnerProfiles = pgTable("pet_owner_profiles", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   defaultClinicId: uuid("default_clinic_id").references(() => clinics.id),
   address: text("address"),
+  city: varchar("city"),
+  district: varchar("district"),
+  postalCode: varchar("postal_code"),
+  emergencyContactName: varchar("emergency_contact_name"),
+  emergencyContactPhone: varchar("emergency_contact_phone"),
+  emergencyContactRelation: varchar("emergency_contact_relation"),
+  dateOfBirth: date("date_of_birth"),
+  occupation: varchar("occupation"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -290,6 +299,9 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertAppointment = typeof appointments.$inferInsert;
 export type Appointment = typeof appointments.$inferSelect;
 
+export type InsertPetOwnerProfile = typeof petOwnerProfiles.$inferInsert;
+export type PetOwnerProfile = typeof petOwnerProfiles.$inferSelect;
+
 // Zod schemas
 export const insertPetSchema = createInsertSchema(pets).omit({
   id: true,
@@ -345,9 +357,39 @@ export const loginUserSchema = z.object({
   password: z.string().min(1, 'Şifre zorunludur'),
 });
 
+export const updateUserProfileSchema = z.object({
+  firstName: z.string().min(1, 'Ad zorunludur'),
+  lastName: z.string().min(1, 'Soyad zorunludur'),
+  phone: z.string().optional(),
+  whatsappPhone: z.string().optional(),
+  whatsappOptIn: z.boolean().default(false),
+});
+
+export const insertPetOwnerProfileSchema = createInsertSchema(petOwnerProfiles).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updatePetOwnerProfileSchema = insertPetOwnerProfileSchema.extend({
+  address: z.string().optional(),
+  city: z.string().optional(),
+  district: z.string().optional(),
+  postalCode: z.string().optional(),
+  emergencyContactName: z.string().optional(),
+  emergencyContactPhone: z.string().optional(),
+  emergencyContactRelation: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  occupation: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 // Type exports
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
+export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
+export type UpdatePetOwnerProfile = z.infer<typeof updatePetOwnerProfileSchema>;

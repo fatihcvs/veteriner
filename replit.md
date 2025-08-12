@@ -19,6 +19,7 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: TanStack Query for server state management and caching
 - **Forms**: React Hook Form with Zod validation for type-safe form handling
 - **Styling**: Tailwind CSS with custom CSS variables for theming, medical-focused color palette
+- **Profile Management**: Comprehensive user profile system with personal information, emergency contacts, and address details
 
 ### Backend Architecture
 - **Framework**: Express.js server with TypeScript
@@ -28,11 +29,12 @@ Preferred communication style: Simple, everyday language.
 - **File Structure**: Separation of concerns with dedicated services for notifications, PDF generation, scheduling, and WhatsApp integration
 
 ### Database Design
-- **Primary Database**: PostgreSQL with Drizzle ORM
+- **Primary Database**: PostgreSQL with Drizzle ORM (using in-memory storage for development)
 - **Schema**: Multi-tenant design with clinic-based data isolation
-- **Key Entities**: Users, Clinics, Pets, Vaccinations, Appointments, Products, Orders, Notifications
+- **Key Entities**: Users, Clinics, Pets, Vaccinations, Appointments, Products, Orders, Notifications, PetOwnerProfiles
 - **Session Storage**: Database-backed sessions using connect-pg-simple
 - **Data Validation**: Zod schemas for runtime type checking and API validation
+- **Profile System**: Extended user profiles with personal details, emergency contacts, address information, and customizable fields
 
 ### Authentication & Authorization
 - **Provider**: Replit Auth with OpenID Connect
