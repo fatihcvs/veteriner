@@ -99,6 +99,10 @@ function AdminPanel() {
     queryKey: ['/api/admin/clinics'],
   });
 
+  const { data: allPets, isLoading: petsLoading } = useQuery({
+    queryKey: ['/api/admin/pets'],
+  });
+
   const { data: systemLogs } = useQuery({
     queryKey: ['/api/admin/logs'],
   });
@@ -121,6 +125,27 @@ function AdminPanel() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       toast({ title: "Kullanıcı silindi" });
+    },
+  });
+
+  // Pet management mutations
+  const updatePetMutation = useMutation({
+    mutationFn: async (data: { petId: string; updates: any }) => {
+      return await apiRequest('PUT', `/api/admin/pets/${data.petId}`, data.updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pets'] });
+      toast({ title: "Hayvan güncellendi" });
+    },
+  });
+
+  const deletePetMutation = useMutation({
+    mutationFn: async (petId: string) => {
+      return await apiRequest('DELETE', `/api/admin/pets/${petId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pets'] });
+      toast({ title: "Hayvan silindi" });
     },
   });
 
@@ -246,9 +271,10 @@ function AdminPanel() {
 
       {/* Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
           <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
+          <TabsTrigger value="pets">Hayvanlar</TabsTrigger>
           <TabsTrigger value="clinics">Klinikler</TabsTrigger>
           <TabsTrigger value="pages">Sayfalar</TabsTrigger>
           <TabsTrigger value="content">İçerik</TabsTrigger>
@@ -405,6 +431,113 @@ function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Pets Tab */}
+        <TabsContent value="pets" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Stethoscope className="h-5 w-5" />
+                Tüm Hayvanlar ({(allPets || []).length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {petsLoading ? (
+                <LoadingSpinner />
+              ) : (
+                <div className="space-y-4">
+                  {(allPets || []).map((pet: any) => (
+                    <div key={pet.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-lg">{pet.name}</p>
+                            <Badge className="bg-blue-100 text-blue-800">
+                              {pet.species}
+                            </Badge>
+                            {pet.breed && (
+                              <Badge variant="outline">
+                                {pet.breed}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="mt-2 grid grid-cols-2 gap-4 text-sm text-professional-gray">
+                            <div>
+                              <span className="font-medium">Yaş:</span> {pet.age || 'Belirtilmemiş'}
+                            </div>
+                            <div>
+                              <span className="font-medium">Kilo:</span> {pet.weight ? `${pet.weight} kg` : 'Belirtilmemiş'}
+                            </div>
+                            <div>
+                              <span className="font-medium">Cinsiyet:</span> {pet.gender || 'Belirtilmemiş'}
+                            </div>
+                            <div>
+                              <span className="font-medium">Kayıt:</span> {new Date(pet.createdAt).toLocaleDateString('tr-TR')}
+                            </div>
+                          </div>
+
+                          {/* Owner Information */}
+                          <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                            <p className="text-sm font-medium text-slate-800 mb-1">
+                              <span className="text-professional-gray">Sahip:</span> {pet.ownerFirstName} {pet.ownerLastName}
+                            </p>
+                            <p className="text-sm text-professional-gray">
+                              <span className="font-medium">E-posta:</span> {pet.ownerEmail}
+                            </p>
+                          </div>
+
+                          {pet.description && (
+                            <div className="mt-2">
+                              <p className="text-sm text-professional-gray">
+                                <span className="font-medium">Açıklama:</span> {pet.description}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 ml-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            // Hayvan düzenleme modalı açılacak
+                            toast({ title: "Hayvan düzenleme özelliği yakında aktif olacak" });
+                          }}
+                        >
+                          <Edit3 className="h-4 w-4 mr-1" />
+                          Düzenle
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            if (confirm(`${pet.name} adlı hayvanı silmek istediğinizden emin misiniz?`)) {
+                              deletePetMutation.mutate(pet.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Sil
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(allPets || []).length === 0 && (
+                    <div className="text-center py-8">
+                      <Stethoscope className="h-16 w-16 mx-auto text-professional-gray mb-4" />
+                      <p className="text-professional-gray">Henüz kayıtlı hayvan bulunmuyor</p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

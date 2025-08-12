@@ -71,6 +71,57 @@ export function setupAdminRoutes(app: Express) {
     }
   });
 
+  // Get all pets (admin only)
+  app.get("/api/admin/pets", requireAdmin, async (req, res) => {
+    try {
+      const pets = await storage.getAllPetsWithOwners();
+      res.json(pets);
+    } catch (error) {
+      console.error("Error fetching all pets:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update pet (admin only)
+  app.put("/api/admin/pets/:petId", requireAdmin, async (req, res) => {
+    try {
+      const { petId } = req.params;
+      const updates = req.body;
+      
+      const updatedPet = await storage.updatePetByAdmin(petId, updates);
+      res.json(updatedPet);
+    } catch (error) {
+      console.error("Error updating pet:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete pet (admin only)
+  app.delete("/api/admin/pets/:petId", requireAdmin, async (req, res) => {
+    try {
+      const { petId } = req.params;
+      
+      await storage.deletePet(petId);
+      res.json({ message: "Pet deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting pet:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create new pet (admin only)
+  app.post("/api/admin/pets", requireAdmin, async (req, res) => {
+    try {
+      const petData = req.body;
+      
+      const newPet = await storage.createPetByAdmin(petData);
+      res.json(newPet);
+    } catch (error) {
+      console.error("Error creating pet:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get all clinics (super admin only)
   app.get("/api/admin/clinics", requireAdmin, async (req, res) => {
     try {

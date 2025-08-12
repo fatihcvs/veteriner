@@ -118,6 +118,10 @@ export interface IStorage {
   deleteUser(userId: string): Promise<void>;
   getAllClinics(): Promise<any[]>;
   updateClinic(clinicId: string, updates: any): Promise<any>;
+  getAllPetsWithOwners(): Promise<any[]>;
+  updatePetByAdmin(petId: string, updates: any): Promise<Pet | undefined>;
+  createPetByAdmin(petData: any): Promise<Pet>;
+  deletePet(petId: string): Promise<void>;
   getSystemLogs(): Promise<any[]>;
   createSystemBackup(): Promise<any>;
   restoreSystemBackup(backupId: string): Promise<any>;
@@ -1268,6 +1272,54 @@ export class DatabaseStorage implements IStorage {
 
   async deletePet(id: string): Promise<void> {
     await db.delete(pets).where(eq(pets.id, id));
+  }
+
+  // Admin pet operations
+  async getAllPetsWithOwners(): Promise<any[]> {
+    const result = await db
+      .select({
+        id: pets.id,
+        name: pets.name,
+        species: pets.species,
+        breed: pets.breed,
+        age: pets.age,
+        weight: pets.weight,
+        gender: pets.gender,
+        description: pets.description,
+        ownerId: pets.ownerId,
+        createdAt: pets.createdAt,
+        updatedAt: pets.updatedAt,
+        ownerFirstName: users.firstName,
+        ownerLastName: users.lastName,
+        ownerEmail: users.email,
+      })
+      .from(pets)
+      .leftJoin(users, eq(pets.ownerId, users.id))
+      .orderBy(desc(pets.createdAt));
+    
+    return result;
+  }
+
+  async updatePetByAdmin(petId: string, updates: any): Promise<Pet | undefined> {
+    const [pet] = await db
+      .update(pets)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(pets.id, petId))
+      .returning();
+    return pet;
+  }
+
+  async createPetByAdmin(petData: any): Promise<Pet> {
+    const [pet] = await db
+      .insert(pets)
+      .values({
+        id: randomUUID(),
+        ...petData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return pet;
   }
 
   // Stub implementations for other methods
