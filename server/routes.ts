@@ -261,6 +261,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Pet vaccination details route
+  app.get('/api/pets/:id/vaccinations', requireAuth, async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const userId = req.user.id;
+      
+      // Check if user owns this pet or is clinic staff
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ message: "Pet not found" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (user?.role === 'PET_OWNER' && pet.ownerId !== userId) {
+        return res.status(403).json({ message: "You can only view your own pets' vaccinations" });
+      }
+      
+      const vaccinations = await storage.getPetVaccinations(petId);
+      res.json(vaccinations);
+    } catch (error) {
+      console.error("Error fetching pet vaccinations:", error);
+      res.status(500).json({ message: "Failed to fetch pet vaccinations" });
+    }
+  });
+
   // Vaccination routes
   app.get('/api/vaccinations/overdue', requireAuth, async (req: any, res) => {
     try {
