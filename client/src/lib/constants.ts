@@ -66,7 +66,7 @@ export const NAVIGATION_ITEMS = [
     label: 'Pano',
     icon: 'fas fa-chart-pie',
     href: '/',
-    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF']
   },
   {
     key: 'appointments',
@@ -96,7 +96,7 @@ export const NAVIGATION_ITEMS = [
     icon: 'fas fa-syringe',
     href: '/vaccinations',
     badge: true,
-    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF']
   },
   {
     key: 'feeding',
@@ -104,21 +104,21 @@ export const NAVIGATION_ITEMS = [
     icon: 'fas fa-bowl-food',
     href: '/feeding',
     badge: true,
-    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF']
   },
   {
     key: 'medical-records',
     label: 'Tıbbi Kayıtlar',
     icon: 'fas fa-file-medical',
     href: '/medical-records',
-    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF']
   },
 ];
 
 export const ECOMMERCE_ITEMS = [
   {
     key: 'shop',
-    label: 'Ürünler',
+    label: 'Mağaza',
     icon: 'fas fa-store',
     href: '/shop',
     roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
@@ -174,7 +174,7 @@ export const MANAGEMENT_ITEMS = [
     label: 'Ayarlar',
     icon: 'fas fa-cog',
     href: '/settings',
-    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF', 'PET_OWNER']
+    roles: ['SUPER_ADMIN', 'CLINIC_ADMIN', 'VET', 'STAFF'] // Only staff members
   },
 ];
 
