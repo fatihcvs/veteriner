@@ -57,7 +57,7 @@ export default function FeedingPage() {
 
   // Food products sorgula
   const { data: foodProducts = [] } = useQuery<FoodProduct[]>({
-    queryKey: ['/api/food-products'],
+    queryKey: ['/api/products'],
   });
 
   // Form kontrolü
