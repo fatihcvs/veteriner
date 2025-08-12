@@ -1282,11 +1282,12 @@ export class DatabaseStorage implements IStorage {
         name: pets.name,
         species: pets.species,
         breed: pets.breed,
-        age: pets.age,
-        weight: pets.weight,
-        gender: pets.gender,
-        description: pets.description,
+        birthDate: pets.birthDate,
+        weight: pets.weightKg,
+        gender: pets.sex,
+        microchipNo: pets.microchipNo,
         ownerId: pets.ownerId,
+        clinicId: pets.clinicId,
         createdAt: pets.createdAt,
         updatedAt: pets.updatedAt,
         ownerFirstName: users.firstName,
@@ -1297,7 +1298,14 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(pets.ownerId, users.id))
       .orderBy(desc(pets.createdAt));
     
-    return result;
+    // Calculate age from birthDate
+    return result.map(pet => ({
+      ...pet,
+      age: pet.birthDate ? 
+        Math.floor((new Date().getTime() - new Date(pet.birthDate).getTime()) / (1000 * 60 * 60 * 24 * 365)) : 
+        null,
+      description: null, // Add description field for compatibility
+    }));
   }
 
   async updatePetByAdmin(petId: string, updates: any): Promise<Pet | undefined> {
