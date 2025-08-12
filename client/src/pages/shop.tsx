@@ -17,9 +17,6 @@ export default function Shop() {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['/api/products'],
     retry: false,
-    onError: (error: Error) => {
-      console.error('Ürünler yüklenirken hata:', error);
-    }
   });
 
   const filteredProducts = products?.filter((product: FoodProduct) => {

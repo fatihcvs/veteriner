@@ -8,20 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, MessageCircle } from 'lucide-react';
 
 export default function Dashboard() {
-  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     retry: false,
-    onError: (error: Error) => {
-      console.error('Dashboard stats yüklenirken hata:', error);
-    }
   });
 
-  const { data: todayAppointments, isLoading: appointmentsLoading, error: appointmentsError } = useQuery({
+  const { data: todayAppointments, isLoading: appointmentsLoading } = useQuery({
     queryKey: ['/api/appointments/today'],
     retry: false,
-    onError: (error: Error) => {
-      console.error('Randevular yüklenirken hata:', error);
-    }
   });
 
   if (statsLoading) {

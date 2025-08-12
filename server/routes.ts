@@ -109,6 +109,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all appointments
+  app.get('/api/appointments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const clinics = await storage.getUserClinics(userId);
+      const clinicId = clinics[0]?.id;
+
+      if (!clinicId) {
+        return res.json([]);
+      }
+
+      const appointments = await storage.getClinicAllAppointments(clinicId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Failed to fetch appointments" });
+    }
+  });
+
   // Get today's appointments
   app.get('/api/appointments/today', requireAuth, async (req: any, res) => {
     try {

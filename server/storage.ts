@@ -34,7 +34,7 @@ import {
 } from '@shared/schema';
 import { randomUUID } from 'crypto';
 import { db } from './db';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, lt } from 'drizzle-orm';
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
@@ -95,6 +95,7 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   getAppointment(id: string): Promise<Appointment | undefined>;
   getClinicAppointments(clinicId: string, date?: string): Promise<any[]>;
+  getClinicAllAppointments(clinicId: string): Promise<any[]>;
   updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
   
   // Feeding plan operations
@@ -635,6 +636,18 @@ export class MemStorage implements IStorage {
         }
         return true;
       })
+      .map(appointment => {
+        const pet = this.pets.get(appointment.petId);
+        const vet = this.users.get(appointment.vetUserId);
+        const owner = pet ? this.users.get(pet.ownerId) : null;
+        return { ...appointment, pet, vet, owner };
+      });
+  }
+
+  async getClinicAllAppointments(clinicId: string): Promise<any[]> {
+    return Array.from(this.appointments.values())
+      .filter(appointment => appointment.clinicId === clinicId)
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
       .map(appointment => {
         const pet = this.pets.get(appointment.petId);
         const vet = this.users.get(appointment.vetUserId);
