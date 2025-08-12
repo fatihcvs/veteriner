@@ -105,6 +105,7 @@ export interface IStorage {
   getAppointment(id: string): Promise<Appointment | undefined>;
   getClinicAppointments(clinicId: string, date?: string): Promise<any[]>;
   getClinicAllAppointments(clinicId: string): Promise<any[]>;
+  getUserAppointments(userId: string): Promise<any[]>;
   updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
   
   // Feeding plan operations
@@ -633,7 +634,7 @@ export class MemStorage implements IStorage {
         petId: samplePets[0].id, // Karabaş
         clinicId: 'admin-clinic-id',
         vetUserId: 'admin-user-id',
-        appointmentDate: new Date('2025-08-15T10:00:00'),
+        scheduledAt: new Date('2025-08-15T10:00:00'),
         duration: 30,
         purpose: 'Aşı kontrolü',
         notes: 'Yıllık aşı kontrolü için',
@@ -647,7 +648,7 @@ export class MemStorage implements IStorage {
         petId: samplePets[1].id, // Pamuk
         clinicId: 'admin-clinic-id',
         vetUserId: 'admin-user-id',
-        appointmentDate: new Date('2025-08-13T14:30:00'),
+        scheduledAt: new Date('2025-08-13T14:30:00'),
         duration: 45,
         purpose: 'Genel muayene',
         notes: 'Kilo kontrolü ve genel sağlık muayenesi',
@@ -661,7 +662,7 @@ export class MemStorage implements IStorage {
         petId: samplePets[2].id, // Bruno
         clinicId: 'admin-clinic-id',
         vetUserId: 'admin-user-id',
-        appointmentDate: new Date('2025-08-14T09:15:00'),
+        scheduledAt: new Date('2025-08-14T09:15:00'),
         duration: 60,
         purpose: 'Diş kontrolü',
         notes: 'Diş taşı temizliği gerekli',
@@ -1302,8 +1303,15 @@ export class MemStorage implements IStorage {
       .filter(appointment => {
         if (appointment.clinicId !== clinicId) return false;
         if (date) {
-          const appointmentDate = new Date(appointment.scheduledAt).toISOString().split('T')[0];
-          return appointmentDate === date;
+          try {
+            const appointmentDate = new Date(appointment.scheduledAt);
+            if (isNaN(appointmentDate.getTime())) return false;
+            const appointmentDateStr = appointmentDate.toISOString().split('T')[0];
+            return appointmentDateStr === date;
+          } catch (error) {
+            console.error('Error parsing appointment date:', error);
+            return false;
+          }
         }
         return true;
       })
@@ -1318,7 +1326,23 @@ export class MemStorage implements IStorage {
   async getClinicAllAppointments(clinicId: string): Promise<any[]> {
     return Array.from(this.appointments.values())
       .filter(appointment => appointment.clinicId === clinicId)
-      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+      .filter(appointment => {
+        try {
+          const appointmentDate = new Date(appointment.scheduledAt);
+          return !isNaN(appointmentDate.getTime());
+        } catch (error) {
+          console.error('Error parsing appointment date:', error);
+          return false;
+        }
+      })
+      .sort((a, b) => {
+        try {
+          return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+        } catch (error) {
+          console.error('Error sorting appointments:', error);
+          return 0;
+        }
+      })
       .map(appointment => {
         const pet = this.pets.get(appointment.petId);
         const vet = this.users.get(appointment.vetUserId);
@@ -1334,6 +1358,37 @@ export class MemStorage implements IStorage {
     const updatedAppointment = { ...appointment, ...updates, updatedAt: new Date() };
     this.appointments.set(id, updatedAppointment);
     return updatedAppointment;
+  }
+
+  async getUserAppointments(userId: string): Promise<any[]> {
+    return Array.from(this.appointments.values())
+      .filter(appointment => {
+        const pet = this.pets.get(appointment.petId);
+        return pet && pet.ownerId === userId;
+      })
+      .filter(appointment => {
+        try {
+          const appointmentDate = new Date(appointment.scheduledAt);
+          return !isNaN(appointmentDate.getTime());
+        } catch (error) {
+          console.error('Error parsing appointment date:', error);
+          return false;
+        }
+      })
+      .sort((a, b) => {
+        try {
+          return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+        } catch (error) {
+          console.error('Error sorting appointments:', error);
+          return 0;
+        }
+      })
+      .map(appointment => {
+        const pet = this.pets.get(appointment.petId);
+        const vet = this.users.get(appointment.vetUserId);
+        const clinic = this.clinics.get(appointment.clinicId);
+        return { ...appointment, pet, vet, clinic };
+      });
   }
 
   // Notification operations
@@ -1981,7 +2036,14 @@ export class DatabaseStorage implements IStorage {
   async deleteOrder(id: string): Promise<void> {}
   async getAppointments(clinicId?: string): Promise<Appointment[]> { return []; }
   async getClinicAppointments(clinicId: string): Promise<Appointment[]> { return []; }
-  async getUserAppointments(userId: string): Promise<Appointment[]> { return []; }
+  async getUserAppointments(userId: string): Promise<Appointment[]> {
+    const userPets = Array.from(this.pets.values()).filter(pet => pet.ownerId === userId);
+    const petIds = userPets.map(pet => pet.id);
+    
+    return Array.from(this.appointments.values())
+      .filter(appointment => petIds.includes(appointment.petId))
+      .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime());
+  }
   async getAppointment(id: string): Promise<Appointment | undefined> { return undefined; }
   async createAppointment(data: InsertAppointment): Promise<Appointment> { throw new Error('Not implemented'); }
   async updateAppointment(id: string, updates: any): Promise<Appointment> { throw new Error('Not implemented'); }

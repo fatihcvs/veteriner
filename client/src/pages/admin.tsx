@@ -4,7 +4,7 @@ import {
   Shield, Users, Building, Settings, BarChart3, Database, 
   FileText, Bell, Package, Calendar, Stethoscope, CreditCard,
   Activity, AlertTriangle, TrendingUp, Download, Edit3, Trash2,
-  Home, RefreshCw, Upload, Plus, Syringe, Eye, X
+  Home, RefreshCw, Upload, Plus, Syringe, Eye, X, CheckCircle, Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

@@ -100,8 +100,10 @@ export default function Shop() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-medical-blue focus:border-medical-blue"
                 >
                   <option value="">Tüm Türler</option>
-                  {Object.entries(PET_SPECIES).map(([key, value]) => (
-                    <option key={key} value={key}>{value}</option>
+                  {PET_SPECIES.map((species) => (
+                    <option key={species.value} value={species.value}>
+                      {species.label}
+                    </option>
                   ))}
                 </select>
               </div>

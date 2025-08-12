@@ -607,6 +607,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/appointments/user', requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const appointments = await storage.getUserAppointments(userId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching user appointments:", error);
+      res.status(500).json({ message: "Failed to fetch appointments" });
+    }
+  });
+
   app.post('/api/appointments', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.id;
