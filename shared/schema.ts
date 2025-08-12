@@ -26,10 +26,11 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (mandatory for Replit Auth)
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  password: varchar("password").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -290,12 +291,6 @@ export type InsertAppointment = typeof appointments.$inferInsert;
 export type Appointment = typeof appointments.$inferSelect;
 
 // Zod schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertPetSchema = createInsertSchema(pets).omit({
   id: true,
   createdAt: true,
@@ -328,3 +323,31 @@ export const insertFoodProductSchema = createInsertSchema(foodProducts).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+// User schemas for email-based authentication
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  verifiedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const registerUserSchema = z.object({
+  email: z.string().email('Geçerli bir e-posta adresi girin'),
+  password: z.string().min(6, 'Şifre en az 6 karakter olmalı'),
+  firstName: z.string().min(1, 'Ad zorunludur'),
+  lastName: z.string().min(1, 'Soyad zorunludur'),
+  phone: z.string().optional(),
+});
+
+export const loginUserSchema = z.object({
+  email: z.string().email('Geçerli bir e-posta adresi girin'),
+  password: z.string().min(1, 'Şifre zorunludur'),
+});
+
+// Type exports
+export type User = typeof users.$inferSelect;
+export type UpsertUser = typeof users.$inferInsert;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;

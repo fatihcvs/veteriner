@@ -13,7 +13,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
 
   return (
     <div className={cn(
@@ -140,8 +140,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.location.href = '/api/logout'}
+              onClick={() => logoutMutation.mutate()}
               className="text-professional-gray hover:text-medical-blue"
+              disabled={logoutMutation.isPending}
             >
               <LogOut className="h-4 w-4" />
             </Button>

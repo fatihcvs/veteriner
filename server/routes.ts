@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, requireAuth } from "./auth";
 import { insertPetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema } from "@shared/schema";
 import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
@@ -9,27 +9,15 @@ import { pdfService } from "./services/pdf";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  setupAuth(app);
 
   // Start scheduler service
   schedulerService.start();
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
   // Dashboard stats
-  app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/stats', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -72,9 +60,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get today's appointments
-  app.get('/api/appointments/today', isAuthenticated, async (req: any, res) => {
+  app.get('/api/appointments/today', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const clinics = await storage.getUserClinics(userId);
       const clinicId = clinics[0]?.id;
 
@@ -93,9 +81,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pet routes
-  app.get('/api/pets', isAuthenticated, async (req: any, res) => {
+  app.get('/api/pets', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -122,9 +110,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/pets', isAuthenticated, async (req: any, res) => {
+  app.post('/api/pets', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const petData = insertPetSchema.parse(req.body);
       
       // Set owner to current user if not specified
@@ -151,9 +139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Vaccination routes
-  app.get('/api/vaccinations/overdue', isAuthenticated, async (req: any, res) => {
+  app.get('/api/vaccinations/overdue', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const clinics = await storage.getUserClinics(userId);
       const clinicId = clinics[0]?.id;
 
@@ -169,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/vaccines', isAuthenticated, async (req: any, res) => {
+  app.get('/api/vaccines', requireAuth, async (req: any, res) => {
     try {
       const vaccines = await storage.getVaccines();
       res.json(vaccines);
@@ -179,9 +167,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/vaccinations', isAuthenticated, async (req: any, res) => {
+  app.post('/api/vaccinations', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const vaccinationData = insertVaccinationEventSchema.parse(req.body);
       
       // Set vet to current user
@@ -221,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate vaccination card PDF
-  app.get('/api/pets/:petId/vaccination-card', isAuthenticated, async (req: any, res) => {
+  app.get('/api/pets/:petId/vaccination-card', requireAuth, async (req: any, res) => {
     try {
       const { petId } = req.params;
       const pet = await storage.getPet(petId);
@@ -269,9 +257,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Product routes
-  app.get('/api/products', isAuthenticated, async (req: any, res) => {
+  app.get('/api/products', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const clinics = await storage.getUserClinics(userId);
       const clinicId = clinics[0]?.id;
       
@@ -283,9 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/products', isAuthenticated, async (req: any, res) => {
+  app.post('/api/products', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const productData = insertFoodProductSchema.parse(req.body);
       
       // Set clinic if staff member
@@ -303,9 +291,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order routes
-  app.get('/api/orders', isAuthenticated, async (req: any, res) => {
+  app.get('/api/orders', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orders = await storage.getUserOrders(userId);
       res.json(orders);
     } catch (error) {
@@ -314,9 +302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/orders', isAuthenticated, async (req: any, res) => {
+  app.post('/api/orders', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { items, shippingAddress } = req.body;
       
       if (!items || !Array.isArray(items) || items.length === 0) {
@@ -364,9 +352,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Appointment routes
-  app.get('/api/appointments', isAuthenticated, async (req: any, res) => {
+  app.get('/api/appointments', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const clinics = await storage.getUserClinics(userId);
       const clinicId = clinics[0]?.id;
 
@@ -382,9 +370,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/appointments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/appointments', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const appointmentData = insertAppointmentSchema.parse(req.body);
       
       // Set vet to current user if not specified
@@ -449,9 +437,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Feeding Plans
-  app.get('/api/feeding-plans', isAuthenticated, async (req: any, res) => {
+  app.get('/api/feeding-plans', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const feedingPlans = await storage.getFeedingPlans(userId);
       res.json(feedingPlans);
     } catch (error) {
@@ -460,9 +448,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/feeding-plans', isAuthenticated, async (req: any, res) => {
+  app.post('/api/feeding-plans', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const planData = req.body;
       
       // Validate the pet belongs to user
@@ -479,9 +467,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/feeding-plans/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/feeding-plans/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const feedingPlan = await storage.getFeedingPlan(id);
       
@@ -501,9 +489,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/feeding-plans/:id', isAuthenticated, async (req: any, res) => {
+  app.put('/api/feeding-plans/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const updates = req.body;
       
@@ -525,9 +513,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/feeding-plans/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/feeding-plans/:id', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       
       const existingPlan = await storage.getFeedingPlan(id);
@@ -549,9 +537,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications
-  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/notifications', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const notifications = await storage.getUserNotifications(userId);
       res.json(notifications);
     } catch (error) {

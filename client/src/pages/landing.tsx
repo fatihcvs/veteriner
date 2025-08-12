@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { APP_NAME, APP_DESCRIPTION } from '@/lib/constants';
+import { Link } from 'wouter';
 
 export default function Landing() {
   return (
@@ -29,18 +30,19 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <Button 
-                onClick={() => window.location.href = '/api/login'}
-                className="w-full bg-medical-blue hover:bg-medical-blue/90 text-white"
-                size="lg"
-              >
-                <i className="fas fa-sign-in-alt mr-2"></i>
-                Giriş Yap
-              </Button>
+              <Link href="/auth">
+                <Button 
+                  className="w-full bg-medical-blue hover:bg-medical-blue/90 text-white"
+                  size="lg"
+                >
+                  <i className="fas fa-sign-in-alt mr-2"></i>
+                  Giriş Yap / Kayıt Ol
+                </Button>
+              </Link>
             </div>
 
             <div className="text-xs text-professional-gray">
-              <p>Güvenli giriş için Replit hesabınızı kullanın</p>
+              <p>E-posta ile güvenli giriş yapın</p>
             </div>
           </div>
         </CardContent>
