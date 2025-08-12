@@ -271,6 +271,7 @@ export const appointments = pgTable("appointments", {
   type: varchar("type").notNull(), // CHECKUP, VACCINATION, SURGERY, EMERGENCY
   status: varchar("status").default('SCHEDULED'), // SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
   notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -423,6 +423,7 @@ function AppointmentForm({ onSuccess, pets }: { onSuccess: () => void; pets: any
     createAppointmentMutation.mutate({
       petId: selectedPet,
       clinicId: pet.clinicId,
+      vetUserId: pet.clinicId, // Default to clinic for now - backend will set proper vet
       type: appointmentType,
       scheduledAt: new Date(`${selectedDate}T${selectedTime}:00`),
       notes: notes || undefined,

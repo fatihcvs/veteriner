@@ -618,33 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/appointments', requireAuth, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const appointmentData = insertAppointmentSchema.parse(req.body);
-      
-      // Set vet to current user if not specified
-      if (!appointmentData.vetUserId) {
-        appointmentData.vetUserId = userId;
-      }
-      
-      // Get user's clinic
-      const clinics = await storage.getUserClinics(userId);
-      const clinicId = clinics[0]?.id || appointmentData.clinicId;
-      
-      if (!clinicId) {
-        return res.status(400).json({ message: 'No clinic assigned' });
-      }
-      
-      appointmentData.clinicId = clinicId;
-      
-      const appointment = await storage.createAppointment(appointmentData);
-      res.json(appointment);
-    } catch (error) {
-      console.error("Error creating appointment:", error);
-      res.status(500).json({ message: "Failed to create appointment" });
-    }
-  });
+
 
   // WhatsApp webhook
   app.post('/api/webhooks/whatsapp', async (req, res) => {
