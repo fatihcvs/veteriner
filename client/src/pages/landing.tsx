@@ -21,12 +21,12 @@ export default function Landing() {
               <div className="bg-slate-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-slate-800 mb-2">Özellikler</h3>
                 <ul className="text-sm text-professional-gray space-y-1">
-                  <li>• Evcil hayvan kayıtları</li>
-                  <li>• Aşı takibi ve hatırlatma</li>
-                  <li>• Randevu yönetimi</li>
-                  <li>• E-ticaret ve sipariş takibi</li>
-                  <li>• WhatsApp bildirimleri</li>
-                  <li>• Dijital aşı kartı</li>
+                  <li>• Hayvanlarınızı kaydedin ve takip edin</li>
+                  <li>• Randevu alın ve yönetin</li>
+                  <li>• Mama ve malzeme satın alın</li>
+                  <li>• Siparişlerinizi takip edin</li>
+                  <li>• WhatsApp bildirimleri alın</li>
+                  <li>• Profil ve bilgilerinizi yönetin</li>
                 </ul>
               </div>
 

@@ -129,8 +129,8 @@ export default function Pets() {
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-medical-blue focus:border-medical-blue"
               >
                 <option value="">Tüm Türler</option>
-                {Object.entries(PET_SPECIES).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {PET_SPECIES.map((species) => (
+                  <option key={species.value} value={species.value}>{species.label}</option>
                 ))}
               </select>
             </div>
@@ -176,7 +176,7 @@ export default function Pets() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg text-slate-800 truncate">{pet.name}</h3>
                     <p className="text-sm text-professional-gray">
-                      {PET_SPECIES[pet.species as keyof typeof PET_SPECIES]} 
+                      {PET_SPECIES.find(s => s.value === pet.species)?.label || pet.species} 
                       {pet.breed && ` • ${pet.breed}`}
                     </p>
                     {pet.birthDate && (

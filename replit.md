@@ -29,9 +29,16 @@ The system is designed as a multi-tenant application supporting different user r
 - **Role-Based Access Control**: Advanced permissions system with admin-only features 
 
 ## Recent Changes (August 2025)
-- **E-commerce Enhancement**: Added top 10 trending pet products for 2024 based on market research
-- **Product Catalog**: Integrated authentic, high-selling products including smart feeders, premium organic foods, interactive toys, GPS trackers, CBD wellness products, and luxury pet tech
-- **Market Research Integration**: Products selected based on real market data showing growth rates of 5.8%-200% in their respective categories
+
+### User Interface Updates (August 12, 2025)
+- **Landing Page Optimization**: Updated feature descriptions to focus on pet owner benefits rather than clinic management
+- **Authentication Page**: Redesigned messaging to emphasize pet tracking and digital health management for individual users
+- **Navigation Restrictions**: Properly implemented PET_OWNER role limitations - users only see appropriate menu sections
+- **Bug Fixes**: Resolved React rendering error in pets page species selection dropdown
+
+### E-commerce Enhancement
+- **Product Catalog**: Added top 10 trending pet products for 2024 based on market research
+- **Market Integration**: Products selected based on real market data showing growth rates of 5.8%-200% in their respective categories
 
 ### Role-Based Access Control (Pet Owner Focus)
 - **Default User Role**: New registrations automatically assigned PET_OWNER role instead of admin roles
@@ -41,6 +48,8 @@ The system is designed as a multi-tenant application supporting different user r
 - **Dynamic Labels**: Navigation menu labels change based on user role (e.g., "Hayvanlarım" for pet owners vs "Hastalar" for clinic staff)
 - **Complete Appointment System**: Fully functional appointment booking with time slot selection, pet selection, and form validation
 - **Admin Panel Restriction**: Only SUPER_ADMIN and CLINIC_ADMIN can access admin features and staff management
+- **Admin Panel User Editing**: Fixed critical bug where user editing wasn't saving changes - now properly updates user information
+- **Marketing Content**: Updated landing and auth pages to reflect pet owner-focused features instead of clinic management
 
 ## User Preferences
 

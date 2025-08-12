@@ -41,7 +41,7 @@ export default function AuthPage() {
                 VetTrack Pro
               </h1>
               <p className="text-xl text-professional-gray">
-                Veteriner klinikleri için kapsamlı yönetim sistemi
+                Evcil hayvanınız için dijital sağlık takip sistemi
               </p>
             </div>
 
@@ -49,9 +49,9 @@ export default function AuthPage() {
               <div className="flex items-start space-x-4">
                 <Heart className="h-8 w-8 text-medical-blue mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Evcil Hayvan Takibi</h3>
+                  <h3 className="font-semibold text-gray-900">Hayvan Takibi</h3>
                   <p className="text-professional-gray">
-                    Detaylı evcil hayvan kayıtları, aşı takibi ve sağlık geçmişi
+                    Evcil hayvanlarınızı kaydedin ve randevu alın
                   </p>
                 </div>
               </div>
@@ -59,9 +59,9 @@ export default function AuthPage() {
               <div className="flex items-start space-x-4">
                 <Shield className="h-8 w-8 text-medical-blue mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Otomatik Bildirimler</h3>
+                  <h3 className="font-semibold text-gray-900">Bildirimler</h3>
                   <p className="text-professional-gray">
-                    WhatsApp ile aşı hatırlatmaları ve mama takibi bildirimleri
+                    WhatsApp ile önemli bildirimler ve hatırlatmalar alın
                   </p>
                 </div>
               </div>
@@ -69,9 +69,9 @@ export default function AuthPage() {
               <div className="flex items-start space-x-4">
                 <Users className="h-8 w-8 text-medical-blue mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Klinik Yönetimi</h3>
+                  <h3 className="font-semibold text-gray-900">Online Alışveriş</h3>
                   <p className="text-professional-gray">
-                    Randevu takibi, ürün satışı ve müşteri yönetimi
+                    Mama ve pet malzemelerini kolayca satın alın
                   </p>
                 </div>
               </div>
