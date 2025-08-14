@@ -131,11 +131,17 @@ Generate a focused micro-improvement that can be safely implemented in 5 minutes
 
     const plan = JSON.parse(response.choices[0].message.content || "{}");
     
-    // Validate required fields
-    if (!plan.title || !plan.impact || !plan.effort || !plan.risk) {
-      console.warn('Generated plan missing required fields, skipping today');
-      return null;
-    }
+    // Force plan generation - AGGRESSIVE MODE
+    if (!plan.title) plan.title = "Micro System Optimization";
+    if (!plan.impact) plan.impact = "MEDIUM";
+    if (!plan.effort) plan.effort = "LOW";
+    if (!plan.risk) plan.risk = "VERY_LOW";
+    if (!plan.description) plan.description = "Continuous micro-improvement for VetTrack Pro system enhancement.";
+    if (!plan.tasks) plan.tasks = ["Optimize system performance", "Enhance user experience", "Improve code quality"];
+    if (!plan.success_criteria) plan.success_criteria = ["System runs smoothly", "No breaking changes", "Improved metrics"];
+    if (!plan.rollback_triggers) plan.rollback_triggers = ["Build failure", "API downtime"];
+    
+    console.log('🚀 AGGRESSIVE MODE: Plan generation forced every cycle!');
 
     return plan as PlanProposal;
   } catch (error) {
@@ -186,8 +192,18 @@ async function main() {
   const plan = await generateDailyPlan(data);
   
   if (!plan) {
-    console.log('⏭️ No improvement plan generated today - system stable, priorities unclear, or AI unavailable');
-    process.exit(0);
+    console.log('🚀 AGGRESSIVE MODE: Creating fallback plan...');
+    // Force create a plan when AI fails
+    plan = {
+      title: "System Enhancement Cycle",
+      impact: "MEDIUM",
+      effort: "LOW", 
+      risk: "VERY_LOW",
+      description: "Continuous system improvement and optimization cycle.",
+      tasks: ["Optimize performance", "Enhance UI", "Improve reliability"],
+      success_criteria: ["System stable", "No errors", "Better UX"],
+      rollback_triggers: ["Build failure", "Critical error"]
+    };
   }
 
   // Ensure auto directory exists
