@@ -1,0 +1,59 @@
+{
+  "lastUpdated": "2025-08-14T07:00:00Z",
+  "deployment": {
+    "status": "active",
+    "uptime": "99.9%",
+    "lastDeploy": "2025-08-14T06:00:00Z",
+    "healthScore": 95
+  },
+  "performance": {
+    "avgResponseTime": 250,
+    "errorRate": 0.1,
+    "loadTime": 1800,
+    "cacheHitRate": 85
+  },
+  "features": {
+    "aiConsultations": {
+      "active": true,
+      "usage": 45,
+      "successRate": 92,
+      "avgConfidence": 0.85
+    },
+    "petManagement": {
+      "active": true,
+      "totalPets": 127,
+      "newRegistrations": 12,
+      "activeUsers": 89
+    },
+    "ecommerce": {
+      "active": true,
+      "orders": 23,
+      "revenue": 5420,
+      "conversionRate": 15.2
+    },
+    "whatsappIntegration": {
+      "active": false,
+      "pendingSetup": true,
+      "priority": "high"
+    }
+  },
+  "codeQuality": {
+    "lintErrors": 9,
+    "testCoverage": 65,
+    "duplicateCode": 8,
+    "complexityScore": 7.2
+  },
+  "user": {
+    "totalUsers": 156,
+    "activeDaily": 45,
+    "retention": 78,
+    "satisfaction": 4.2
+  },
+  "priorities": [
+    "whatsapp_integration",
+    "digital_health_passport",
+    "smart_recommendations",
+    "mobile_optimization",
+    "performance_tuning"
+  ]
+}

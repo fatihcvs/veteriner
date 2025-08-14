@@ -1,0 +1,127 @@
+https://github.com/fatihcvs/veteriner
+
+HEDEF: ChatGPT bu projenin tam zamanlı yazılımcısı. Sınırsız yetkiyle her gün planla → geliştir → test et → deploy et; sorun bul → düzelt; başarısızsa rollback. Küçük-büyük geliştirme sınırı yok.
+
+YAP:
+1) Secrets doğrula (yoksa README’ye yaz): OPENAI_API_KEY, HEALTHCHECK_URL, REPLIT_DEPLOY_HOOK (opsiyonel), ROLLBACK_COMMITS (varsayılan 1).
+2) Telemetry/backlog dosyaları oluştur/koru:
+   - telemetry/metrics.json (örnek metrikler)
+   - telemetry/feedback.md (kullanıcı notları)
+   - telemetry/roadmap.md (öncelikli hedefler)
+   - CHANGELOG.md (günlük özetler)
+
+3) Root package.json scriptleri ekle/güncelle:
+{
+  "scripts": {
+    "health:check": "node -e \"const u=process.env.HEALTHCHECK_URL; if(!u) process.exit(0); require('https').get(u,r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\"",
+    "test:all": "npm --prefix server test --silent || true && npm --prefix client test --silent || true",
+    "lint:fix": "npm --prefix server run lint:fix || true && npm --prefix client run lint:fix || true"
+  }
+}
+
+4) LLM betikleri ekle (TypeScript, ts-node ile çalışacak):
+- scripts/auto-plan.ts
+  - Girdi: telemetry/metrics.json, feedback.md, roadmap.md, son test & health sonuçları.
+  - Çıktı: auto/proposal.md (bugün yapılacak işlerin planı: başlık, etki, efor, risk).
+  - System prompt: “You are a staff engineer. Generate a practical daily improvement plan aligned with metrics and feedback.”
+
+- scripts/auto-implement.ts
+  - Girdi: auto/proposal.md + repo durumu.
+  - Kapsam: TÜM kod tabanı üzerinde değişiklik serbest (server/, client/, shared/, config/). Gerekirse dosya ekle/sil, mimariyi güncelle, paket ekle/çıkar.
+  - Çıktı: unified diff üret → uygula → ESLint/Prettier → gerekli küçük/orta testleri ekle/güncelle.
+  - Commit mesajı: "feat(auto): daily improvement – <özet> [auto]".
+  - System prompt: “You are a senior full-stack engineer. Implement the proposal with safe, coherent, production-ready changes. Keep tests passing. Update docs when needed.”
+
+5) GitHub Action: .github/workflows/daily-auto-dev-unlimited.yml oluştur:
+name: Daily Auto-Dev (Unlimited)
+on:
+  schedule: [ { cron: "0 7 * * *" } ]  # her gün 07:00 UTC
+  workflow_dispatch:
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs: { planned: ${{ steps.flag.outputs.planned }} }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - run: npm --prefix server ci || true
+      - run: npm --prefix client ci || true
+      - name: Snapshot health & tests
+        run: |
+          npm run -s health:check || echo "HEALTH_FAIL=1" >> $GITHUB_ENV
+          npm run -s test:all || echo "TEST_FAIL=1" >> $GITHUB_ENV
+      - name: Generate daily plan
+        env: { OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} }
+        run: npx ts-node scripts/auto-plan.ts
+      - name: Set flag
+        id: flag
+        run: |
+          if [ -s "auto/proposal.md" ]; then echo "planned=true" >> $GITHUB_OUTPUT; else echo "planned=false" >> $GITHUB_OUTPUT; fi
+
+  implement:
+    needs: plan
+    if: needs.plan.outputs.planned == 'true'
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - run: npm --prefix server ci || true
+      - run: npm --prefix client ci || true
+      - name: Apply LLM changes
+        env: { OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} }
+        run: npx ts-node scripts/auto-implement.ts
+      - name: Lint & Tests
+        run: |
+          npm run -s lint:fix || true
+          npm run -s test:all
+      - name: Commit & push to main
+        run: |
+          git config user.name "auto-dev-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(auto): daily improvement [auto]" || echo "No changes"
+          git push origin HEAD:main
+
+  deploy:
+    needs: implement
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Replit deploy (optional)
+        if: ${{ secrets.REPLIT_DEPLOY_HOOK != '' }}
+        run: curl -sSf -X POST "${{ secrets.REPLIT_DEPLOY_HOOK }}"
+      - name: Post-deploy health check
+        env: { HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }} }
+        run: |
+          for i in {1..10}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTHCHECK_URL" || true)
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 6
+          done
+          exit 1
+
+  rollback:
+    needs: deploy
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rollback failed deploy
+        env: { COUNT: ${{ secrets.ROLLBACK_COMMITS || 1 }} }
+        run: |
+          git config user.name "auto-dev-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git checkout main
+          git reset --hard HEAD~${COUNT}
+          git push -f origin main
+
+6) Dökümantasyon:
+- README: “Daily Auto-Dev (Unlimited)” bölümü ekle (çalışma mantığı, secrets listesi, nasıl durdurulur).
+- Her çalışmada CHANGELOG.md’ye tarih başlığıyla özet yaz (auto-implement.ts bunu yapsın).
+
+TESLİM: Eklenen dosyalar, workflow adı, betiklerin kısa açıklaması ve ilk “workflow_dispatch” denemesinin özeti (başarılı/rollback).

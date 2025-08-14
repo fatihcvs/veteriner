@@ -20,6 +20,8 @@ The primary target market is pet owners (25-45, tech-savvy, mid-to-high income, 
 Preferred communication style: Simple, everyday language.
 Development Authority: Complete autonomous development authority. Continuous development cycle (plan -> develop -> test -> deploy). Autonomous problem-solving (find -> fix -> optimize). No scope limitation; develop all features from small to large. Full authority in all areas: Database, API, UI, UX, deployment. Remain focused on the core vision. Adopt a systematic approach with phased development to achieve goals.
 
+**Daily Auto-Dev System**: Unlimited autonomous development system implemented with GPT-4o integration. Daily planning, implementation, testing, and deployment with automatic rollback capabilities. System operates via GitHub Actions workflow with comprehensive monitoring and safety features.
+
 ## System Architecture
 
 ### Frontend Architecture
