@@ -22,6 +22,8 @@ Development Authority: Complete autonomous development authority. Continuous dev
 
 **Daily Auto-Dev System**: Unlimited autonomous development system implemented with GPT-4o integration. Daily planning, implementation, testing, and deployment with automatic rollback capabilities. System operates via GitHub Actions workflow with comprehensive monitoring and safety features.
 
+**Visual Enhancement Mandate**: ChatGPT auto-dev system must prioritize visual website improvements alongside functional development. This includes UI/UX enhancements, design improvements, animation additions, responsive design optimization, and modern visual elements to create a premium veterinary platform experience.
+
 ## System Architecture
 
 ### Frontend Architecture

@@ -71,8 +71,11 @@ async function generateDailyPlan(data: any): Promise<PlanProposal | null> {
 
 Your role is to analyze daily metrics, user feedback, and strategic roadmap to generate ONE high-impact daily improvement plan.
 
+CRITICAL PRIORITY: Focus heavily on VISUAL IMPROVEMENTS and UI/UX enhancements. The user specifically wants the ChatGPT system to improve the website's visual appearance, animations, design, and user experience alongside functional features.
+
 CONTEXT:
 - VetTrack Pro is a comprehensive SaaS platform for veterinary clinic management
+- VISUAL ENHANCEMENT MANDATE: Prioritize UI/UX improvements, design upgrades, animations, responsive design, and modern visual elements
 - Core features: AI pet consultation, digital health passports, e-commerce, WhatsApp integration
 - Target: 500+ monthly active users, ₺265,000/month revenue
 - Current phase: AI-Powered Core Foundation (Phase 1)
@@ -189,7 +192,7 @@ async function main() {
   const data = await loadProjectData();
   console.log(`📊 Loaded metrics: ${data.metrics.user.activeDaily} daily users, ${data.metrics.codeQuality.lintErrors} lint errors`);
   
-  const plan = await generateDailyPlan(data);
+  let plan = await generateDailyPlan(data);
   
   if (!plan) {
     console.log('🚀 AGGRESSIVE MODE: Creating fallback plan...');
@@ -211,13 +214,15 @@ async function main() {
     fs.mkdirSync('auto', { recursive: true });
   }
 
-  // Write proposal
-  const proposalMarkdown = generateProposalMarkdown(plan);
-  fs.writeFileSync('auto/proposal.md', proposalMarkdown);
-  
-  console.log(`✅ Daily plan generated: "${plan.title}"`);
-  console.log(`📈 Impact: ${plan.impact} | Effort: ${plan.effort} | Risk: ${plan.risk}`);
-  console.log(`📝 Proposal saved to auto/proposal.md`);
+  // Write proposal (plan is guaranteed to exist here)
+  if (plan) {
+    const proposalMarkdown = generateProposalMarkdown(plan);
+    fs.writeFileSync('auto/proposal.md', proposalMarkdown);
+    
+    console.log(`✅ Daily plan generated: "${plan.title}"`);
+    console.log(`📈 Impact: ${plan.impact} | Effort: ${plan.effort} | Risk: ${plan.risk}`);
+    console.log(`📝 Proposal saved to auto/proposal.md`);
+  }
   
   // Update metrics with planning timestamp
   const metrics = data.metrics;

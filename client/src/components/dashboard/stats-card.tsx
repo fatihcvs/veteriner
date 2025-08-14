@@ -45,18 +45,29 @@ export default function StatsCard({
   };
 
   return (
-    <Card className={cn('', className)}>
-      <CardContent className="p-6">
+    <Card className={cn(
+      'relative overflow-hidden border-0 shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl group bg-gradient-to-br from-white via-blue-50/30 to-blue-100/50 dark:from-gray-900 dark:via-blue-950/30 dark:to-blue-900/50',
+      className
+    )}>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 group-hover:from-blue-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+      <CardContent className="relative p-6">
         <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground font-medium">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground font-medium tracking-wide uppercase">{title}</p>
+            <p className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">{value}</p>
             {change && (
-              <p className={cn('text-xs', getChangeColor())}>{change}</p>
+              <p className={cn('text-xs font-medium flex items-center gap-1', getChangeColor())}>
+                {changeType === 'positive' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                {changeType === 'negative' && <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
+                {change}
+              </p>
             )}
           </div>
           {icon && (
-            <div className={cn('text-2xl', getIconColor())}>
+            <div className={cn(
+              'text-3xl p-3 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900 shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110',
+              getIconColor()
+            )}>
               <i className={icon} />
             </div>
           )}
