@@ -73,6 +73,8 @@ export interface IStorage {
   getClinicPets(clinicId: string): Promise<Pet[]>;
   getUserPets(userId: string): Promise<Pet[]>;
   getAllPetsWithOwners(): Promise<any[]>;
+  getPetAppointments(petId: string): Promise<Appointment[]>;
+  getPetFeedingPlans(petId: string): Promise<any[]>;
   updatePet(id: string, updates: Partial<Pet>): Promise<Pet>;
   
   // Vaccination operations
@@ -98,7 +100,7 @@ export interface IStorage {
   getOrder(id: string): Promise<any | undefined>;
   getUserOrders(userId: string): Promise<any[]>;
   getAllOrders(): Promise<any[]>;
-  updateOrderStatus(id: string, status: string): Promise<void>;
+  updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
   
   // Appointment operations
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
@@ -378,11 +380,13 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(orders);
   }
 
-  async updateOrderStatus(id: string, status: string): Promise<void> {
-    await db
+  async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
+    const [updatedOrder] = await db
       .update(orders)
       .set({ status, updatedAt: new Date() })
-      .where(eq(orders.id, id));
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder || undefined;
   }
 
   // Appointment operations
@@ -456,6 +460,14 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFeedingPlan(id: string): Promise<void> {
     // Implement based on feeding plans schema
+  }
+
+  async getPetAppointments(petId: string): Promise<Appointment[]> {
+    return await db.select().from(appointments).where(eq(appointments.petId, petId));
+  }
+
+  async getPetFeedingPlans(petId: string): Promise<any[]> {
+    return await db.select().from(feedingPlans).where(eq(feedingPlans.petId, petId));
   }
 
   // Notification operations

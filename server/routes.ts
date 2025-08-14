@@ -647,7 +647,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Handle incoming messages
               if (value.messages) {
                 for (const message of value.messages) {
-                  await this.handleIncomingMessage(message);
+                  // TODO: Implement handleIncomingMessage function
+                  console.log('Incoming WhatsApp message:', message);
                 }
               }
             }
@@ -811,7 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enrich with vet information
       const enrichedAppointments = await Promise.all(
-        appointments.map(async (appointment) => {
+        appointments.map(async (appointment: any) => {
           const vet = await storage.getUser(appointment.vetUserId);
           return {
             ...appointment,
@@ -834,7 +835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Enrich with food product information
       const enrichedPlans = await Promise.all(
-        feedingPlans.map(async (plan) => {
+        feedingPlans.map(async (plan: any) => {
           const foodProducts = await storage.getFoodProducts();
           const foodProduct = foodProducts.find(p => p.id === plan.foodProductId);
           return {

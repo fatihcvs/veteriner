@@ -85,12 +85,12 @@ ANALYSIS PRIORITIES:
 5. Performance optimizations
 6. Strategic feature development
 
-DAILY PLAN CRITERIA:
-- Focus on ONE primary objective that can be completed in 6-8 hours
-- Ensure changes are safe, testable, and reversible
-- Prioritize user-facing improvements with measurable impact
-- Consider technical debt only if it blocks progress
-- Align with current phase objectives
+MICRO-IMPROVEMENT CRITERIA:
+- Focus on ONE small improvement that can be completed in 5-10 minutes
+- Ensure changes are extremely safe, minimal, and reversible
+- Prioritize micro-optimizations and bug fixes
+- Only make incremental progress on larger features
+- Avoid major architectural changes in micro-cycles
 
 RISK ASSESSMENT:
 - LOW: UI/UX improvements, documentation, minor features
@@ -115,7 +115,7 @@ SYSTEM STATUS:
 - Tests: ${data.testResults}
 - Date: ${new Date().toISOString().split('T')[0]}
 
-Generate a focused daily plan that delivers maximum user value while maintaining system stability.`;
+Generate a focused micro-improvement that can be safely implemented in 5 minutes while maintaining system stability.`;
 
   try {
     const response = await openai.chat.completions.create({

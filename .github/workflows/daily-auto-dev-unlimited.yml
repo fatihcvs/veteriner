@@ -1,9 +1,9 @@
-name: Daily Auto-Dev (Unlimited)
+name: Auto-Dev Every 5 Minutes (Unlimited)
 
 on:
   schedule:
-    - cron: "0 7 * * *"  # Every day at 07:00 UTC (10:00 Istanbul time)
-  workflow_dispatch:  # Manual trigger for testing
+    - cron: "*/5 * * * *"  # Every 5 minutes - continuous improvement
+  workflow_dispatch:  # Manual trigger for immediate execution
 
 jobs:
   plan:
@@ -243,9 +243,9 @@ Auto-commit: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Report daily status
+      - name: Report 5-minute cycle status
         run: |
-          echo "📊 Daily Auto-Dev Summary for $(date -u '+%Y-%m-%d')"
+          echo "📊 Auto-Dev 5-Minute Cycle Summary for $(date -u '+%Y-%m-%d %H:%M')"
           echo "=================================="
           
           if [ "${{ needs.plan.result }}" = "success" ] && [ "${{ needs.plan.outputs.planned }}" = "true" ]; then
@@ -281,4 +281,4 @@ Auto-commit: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           fi
           
           echo "=================================="
-          echo "VetTrack Pro continues to evolve autonomously 🤖"
+          echo "VetTrack Pro evolving every 5 minutes via autonomous AI 🤖"
