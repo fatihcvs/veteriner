@@ -18,6 +18,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI routes
   app.use('/api/ai', aiRoutes);
+  
+  // Auto-Dev monitoring routes
+  app.use('/api/admin/auto-dev', requireAuth, requireRole(['SUPER_ADMIN']), (await import('./routes/admin-auto-dev')).default);
 
   // Start scheduler service
   schedulerService.start();

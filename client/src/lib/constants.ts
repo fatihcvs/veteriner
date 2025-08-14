@@ -185,6 +185,13 @@ export const MANAGEMENT_ITEMS = [
     roles: ['SUPER_ADMIN', 'CLINIC_ADMIN'] // Only admins
   },
   {
+    key: 'auto-dev',
+    label: 'Auto-Dev İzleme',
+    icon: 'fas fa-robot',
+    href: '/admin/auto-dev',
+    roles: ['SUPER_ADMIN'] // Only super admin
+  },
+  {
     key: 'settings',
     label: 'Ayarlar',
     icon: 'fas fa-cog',
