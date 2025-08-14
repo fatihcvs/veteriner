@@ -35,7 +35,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   const stockStatus = getStockStatus(product.stockQty || 0);
-  const imageUrl = product.images && product.images.length > 0 
+  const imageUrl = product.images && (product.images as any)?.length > 0 
     ? (product.images as string[])[0] 
     : 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400';
 
@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.species && (
             <div className="absolute top-3 right-3">
               <Badge variant="outline" className="bg-white">
-                {PET_SPECIES[product.species as keyof typeof PET_SPECIES]}
+                {PET_SPECIES[product.species as keyof typeof PET_SPECIES] || product.species}
               </Badge>
             </div>
           )}
@@ -120,7 +120,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                   e.stopPropagation();
                   updateQuantity(product.id, itemQuantity + 1);
                 }}
-                disabled={product.stockQty !== undefined && itemQuantity >= product.stockQty}
+                disabled={(product.stockQty ?? 0) > 0 && itemQuantity >= (product.stockQty ?? 0)}
                 data-testid={`button-increase-${product.id}`}
               >
                 <Plus className="h-4 w-4" />
@@ -191,7 +191,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-professional-gray">Uygun Hayvan:</span>
                       <Badge variant="outline">
-                        {PET_SPECIES[product.species as keyof typeof PET_SPECIES]}
+                        {PET_SPECIES[product.species as keyof typeof PET_SPECIES] || product.species}
                       </Badge>
                     </div>
                   )}
@@ -231,7 +231,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => updateQuantity(product.id, itemQuantity + 1)}
-                        disabled={product.stockQty !== undefined && itemQuantity >= product.stockQty}
+                        disabled={(product.stockQty ?? 0) > 0 && itemQuantity >= (product.stockQty ?? 0)}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>

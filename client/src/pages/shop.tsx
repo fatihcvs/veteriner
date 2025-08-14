@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import ProductCard from '@/components/shop/product-card';
+import SmartRecommendations from '@/components/shop/smart-recommendations';
 import { PET_SPECIES } from '@/lib/constants';
 import { FoodProduct } from '@shared/schema';
 import CartButton from '@/components/shop/cart-button';
@@ -20,7 +21,7 @@ export default function Shop() {
     retry: false,
   });
 
-  const filteredProducts = products?.filter((product: FoodProduct) => {
+  const filteredProducts = (products as any)?.filter((product: FoodProduct) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (product.brand && product.brand.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesSpecies = !selectedSpecies || product.species === selectedSpecies;

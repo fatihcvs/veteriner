@@ -5,7 +5,7 @@ import UrgentNotifications from '@/components/dashboard/urgent-notifications';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageCircle, Calendar, ShoppingCart } from 'lucide-react';
+import { Plus, MessageCircle, Calendar, ShoppingCart, QrCode, Bell, Shield, Heart } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'wouter';
 
@@ -45,7 +45,7 @@ export default function Dashboard() {
   }
 
   if (isPetOwner) {
-    return <PetOwnerDashboard pets={userPets || []} orders={userOrders || []} appointments={todayAppointments || []} />;
+    return <PetOwnerDashboard pets={(userPets as any) || []} orders={(userOrders as any) || []} appointments={(todayAppointments as any) || []} />;
   }
 
   return (
@@ -54,7 +54,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <StatsCard
           title="Bugünkü Randevular"
-          value={stats?.todayAppointments || 0}
+          value={(stats as any)?.todayAppointments || 0}
           change="+3 yeni randevu"
           changeType="positive"
           icon="fas fa-calendar-check"
@@ -62,7 +62,7 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Vadesi Geçen Aşılar"
-          value={stats?.overdueVaccinations || 0}
+          value={(stats as any)?.overdueVaccinations || 0}
           change="Acil müdahale gerekli"
           changeType="negative"
           icon="fas fa-syringe"
@@ -70,7 +70,7 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Aktif Hastalar"
-          value={stats?.activePatients || 0}
+          value={(stats as any)?.activePatients || 0}
           change="+8 yeni kayıt"
           changeType="positive"
           icon="fas fa-paw"
@@ -78,7 +78,7 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Aylık Gelir"
-          value={`₺${stats?.monthlyRevenue?.toLocaleString('tr-TR') || '0'}`}
+          value={`₺${(stats as any)?.monthlyRevenue?.toLocaleString('tr-TR') || '0'}`}
           change="%12 artış"
           changeType="positive"
           icon="fas fa-chart-line"
@@ -90,7 +90,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Schedule */}
         <div className="lg:col-span-2">
-          <TodaySchedule appointments={todayAppointments || []} isLoading={appointmentsLoading} />
+          <TodaySchedule appointments={(todayAppointments as any) || []} isLoading={appointmentsLoading} />
 
           {/* Recent Activities */}
           <Card className="mt-6">
@@ -274,56 +274,112 @@ export default function Dashboard() {
 function PetOwnerDashboard({ pets, orders, appointments }: { pets: any[], orders: any[], appointments: any[] }) {
   return (
     <div className="space-y-6">
-      {/* Welcome Message */}
-      <div className="bg-gradient-to-r from-professional-navy to-medical-blue text-white p-6 rounded-lg">
-        <h2 className="text-2xl font-bold mb-2">Hoş Geldiniz!</h2>
-        <p className="text-blue-100">Evcil hayvanlarınızın sağlık bilgilerini buradan takip edebilirsiniz.</p>
+      {/* Hero Section with QR Feature */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-2xl relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">🐾 Dijital Pet Pasaportu</h1>
+              <p className="text-blue-100 text-lg">Türkiye'nin ilk QR kodlu pet sağlık sistemi</p>
+            </div>
+            <div className="hidden md:block">
+              <Button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30">
+                <QrCode className="h-5 w-5 mr-2" />
+                QR Kodu Oluştur
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-10 translate-x-10"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-10 -translate-x-10"></div>
       </div>
 
-      {/* Pet Owner Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <i className="fas fa-paw text-medical-blue text-xl"></i>
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold">{pets?.length || 0}</h3>
-                <p className="text-professional-gray">Evcil Hayvanım</p>
-              </div>
+      {/* Smart Dashboard Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <i className="fas fa-paw text-blue-600 text-xl"></i>
             </div>
-          </CardContent>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{pets?.length || 0}</p>
+              <p className="text-sm text-gray-600">Evcil Hayvanım</p>
+            </div>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Calendar className="h-6 w-6 text-healthcare-green" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold">{appointments?.length || 0}</h3>
-                <p className="text-professional-gray">Yaklaşan Randevu</p>
-              </div>
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-green-100 rounded-xl">
+              <Calendar className="h-6 w-6 text-green-600" />
             </div>
-          </CardContent>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{appointments?.length || 0}</p>
+              <p className="text-sm text-gray-600">Randevularım</p>
+            </div>
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-teal-100 rounded-lg">
-                <ShoppingCart className="h-6 w-6 text-action-teal" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold">{orders?.length || 0}</h3>
-                <p className="text-professional-gray">Siparişim</p>
-              </div>
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-orange-100 rounded-xl">
+              <ShoppingCart className="h-6 w-6 text-orange-600" />
             </div>
-          </CardContent>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{orders?.length || 0}</p>
+              <p className="text-sm text-gray-600">Siparişlerim</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-purple-100 rounded-xl">
+              <Shield className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">100%</p>
+              <p className="text-sm text-gray-600">Sağlık Skoru</p>
+            </div>
+          </div>
         </Card>
       </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Bell className="h-5 w-5 mr-2 text-blue-600" />
+            Hızlı İşlemler
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link href="/pets">
+              <Button variant="outline" className="w-full h-20 flex-col space-y-2 hover:border-blue-500 hover:bg-blue-50">
+                <i className="fas fa-plus text-blue-600 text-xl"></i>
+                <span className="text-sm">Hayvan Ekle</span>
+              </Button>
+            </Link>
+            <Link href="/appointments">
+              <Button variant="outline" className="w-full h-20 flex-col space-y-2 hover:border-green-500 hover:bg-green-50">
+                <Calendar className="h-6 w-6 text-green-600" />
+                <span className="text-sm">Randevu Al</span>
+              </Button>
+            </Link>
+            <Link href="/shop">
+              <Button variant="outline" className="w-full h-20 flex-col space-y-2 hover:border-orange-500 hover:bg-orange-50">
+                <ShoppingCart className="h-6 w-6 text-orange-600" />
+                <span className="text-sm">Alışveriş</span>
+              </Button>
+            </Link>
+            <Button variant="outline" className="w-full h-20 flex-col space-y-2 hover:border-purple-500 hover:bg-purple-50">
+              <QrCode className="h-6 w-6 text-purple-600" />
+              <span className="text-sm">QR Kod</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* My Pets Section */}
       <Card>
@@ -367,17 +423,31 @@ function PetOwnerDashboard({ pets, orders, appointments }: { pets: any[], orders
                   {pet.description && (
                     <p className="mt-2 text-sm text-professional-gray">{pet.description}</p>
                   )}
+                  
+                  <div className="mt-4 flex justify-between">
+                    <Button size="sm" variant="outline" className="text-blue-600 hover:bg-blue-50">
+                      <QrCode className="h-4 w-4 mr-1" />
+                      QR Kod
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-green-600 hover:bg-green-50">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Randevu
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <i className="fas fa-paw text-professional-gray text-4xl mb-4"></i>
-              <p className="text-professional-gray">Henüz kayıtlı evcil hayvanınız bulunmuyor.</p>
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-paw text-gray-400 text-3xl"></i>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz evcil hayvanınız yok</h3>
+              <p className="text-gray-600 mb-6">İlk evcil hayvanınızı ekleyerek dijital sağlık pasaportunu oluşturun</p>
               <Link href="/pets">
-                <Button className="mt-4">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   <Plus className="h-4 w-4 mr-2" />
-                  İlk Evcil Hayvanınızı Ekleyin
+                  İlk Hayvanımı Ekle
                 </Button>
               </Link>
             </div>
@@ -385,37 +455,92 @@ function PetOwnerDashboard({ pets, orders, appointments }: { pets: any[], orders
         </CardContent>
       </Card>
 
-      {/* Quick Actions for Pet Owner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/notifications">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <MessageCircle className="h-8 w-8 text-medical-blue mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">WhatsApp Bildirimler</h3>
-              <p className="text-sm text-professional-gray">Aşı hatırlatmaları ve önemli bildirimler için WhatsApp'a kaydolun</p>
-            </CardContent>
-          </Card>
-        </Link>
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bell className="h-5 w-5 mr-2 text-orange-600" />
+              Son Aktiviteler
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Calendar className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Randevu tamamlandı</p>
+                  <p className="text-xs text-gray-500">2 saat önce • Rutin kontrol</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <ShoppingCart className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Sipariş verildi</p>
+                  <p className="text-xs text-gray-500">1 gün önce • Royal Canin mama</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <QrCode className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">QR kod oluşturuldu</p>
+                  <p className="text-xs text-gray-500">3 gün önce • Bella için dijital pasaport</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Link href="/appointments">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <Calendar className="h-8 w-8 text-healthcare-green mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">Randevu Al</h3>
-              <p className="text-sm text-professional-gray">Veteriner kontrolü veya aşı randevusu alın</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/shop">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardContent className="p-6 text-center">
-              <ShoppingCart className="h-8 w-8 text-action-teal mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">Mama Siparişi</h3>
-              <p className="text-sm text-professional-gray">Evcil hayvanınız için mama ve aksesuar sipariş verin</p>
-            </CardContent>
-          </Card>
-        </Link>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Heart className="h-5 w-5 mr-2 text-red-500" />
+              Sağlık Durumu
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="font-medium">Aşılar güncel</span>
+                </div>
+                <span className="text-sm text-green-600">✓</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="font-medium">Kontrol randevusu</span>
+                </div>
+                <span className="text-sm text-yellow-600">2 hafta</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium">Beslenme planı</span>
+                </div>
+                <span className="text-sm text-blue-600">Aktif</span>
+              </div>
+            </div>
+            
+            <div className="mt-6 pt-4 border-t">
+              <Link href="/appointments">
+                <Button variant="outline" className="w-full">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Sağlık Kontrolü Randevusu Al
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

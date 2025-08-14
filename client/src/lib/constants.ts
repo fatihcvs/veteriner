@@ -1,5 +1,14 @@
 export const APP_NAME = 'VetTrack Pro';
-export const APP_DESCRIPTION = 'Veteriner Klinik Yönetim Sistemi';
+export const APP_DESCRIPTION = 'Türkiye\'nin İlk Dijital Pet Sağlık Pasaportu';
+export const APP_TAGLINE = 'Evcil hayvanınız için akıllı sağlık takip sistemi';
+export const APP_FEATURES = [
+  'QR kodlu dijital aşı kartları',
+  'Akıllı beslenme önerileri', 
+  'Otomatik WhatsApp hatırlatmaları',
+  'Pet\'e özel ürün önerileri',
+  'Veteriner randevu sistemi',
+  'Sağlık geçmişi takibi'
+];
 
 export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',

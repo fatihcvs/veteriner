@@ -165,6 +165,30 @@ export default function CartButton() {
                   </span>
                 </div>
 
+                {/* Enhanced Payment Options */}
+                <div className="space-y-4 mb-4">
+                  <div className="text-sm font-medium text-slate-800">Ödeme Seçenekleri:</div>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 bg-blue-50 border-medical-blue">
+                      <div className="w-4 h-4 rounded-full bg-medical-blue"></div>
+                      <div className="flex items-center justify-between flex-1">
+                        <div>
+                          <span className="text-sm font-medium">Kredi/Banka Kartı</span>
+                          <div className="text-xs text-professional-gray">💳 Güvenli ödeme</div>
+                        </div>
+                        <div className="text-xs text-medical-blue font-medium">Seçili</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 opacity-70">
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
+                      <div>
+                        <span className="text-sm">Kapıda Ödeme</span>
+                        <div className="text-xs text-professional-gray">🚚 Teslimatta öde (yakında)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex space-x-3">
                   <Button
@@ -179,10 +203,19 @@ export default function CartButton() {
                   <Button
                     onClick={handleCheckout}
                     disabled={createOrderMutation.isPending}
-                    className="flex-1"
+                    className="flex-1 bg-medical-blue hover:bg-medical-blue/90 text-white"
                     data-testid="button-checkout"
                   >
-                    {createOrderMutation.isPending ? 'İşleniyor...' : 'Sipariş Ver'}
+                    {createOrderMutation.isPending ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Sipariş Oluşturuluyor...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center space-x-2">
+                        <span>🔒 Güvenli Sipariş Ver</span>
+                      </div>
+                    )}
                   </Button>
                 </div>
               </div>

@@ -63,8 +63,8 @@ export default function Orders() {
   };
 
   const filterOrdersByStatus = (status: string) => {
-    if (status === 'all') return orders || [];
-    return orders?.filter((order: Order) => order.status === status) || [];
+    if (status === 'all') return (orders as any) || [];
+    return (orders as any)?.filter((order: Order) => order.status === status) || [];
   };
 
   const updateOrderStatusMutation = useMutation({
@@ -162,7 +162,7 @@ export default function Orders() {
         
         <div className="flex items-center gap-4">
           <div className="text-sm text-professional-gray">
-            Toplam {orders?.length || 0} sipariş
+            Toplam {(orders as any)?.length || 0} sipariş
           </div>
         </div>
       </div>
@@ -233,7 +233,7 @@ export default function Orders() {
       {/* Orders Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="all">Tümü ({orders?.length || 0})</TabsTrigger>
+          <TabsTrigger value="all">Tümü ({(orders as any)?.length || 0})</TabsTrigger>
           <TabsTrigger value="PENDING">Beklemede</TabsTrigger>
           <TabsTrigger value="SHIPPED">Kargoda</TabsTrigger>
           <TabsTrigger value="DELIVERED">Teslim Edildi</TabsTrigger>
@@ -268,22 +268,22 @@ export default function Orders() {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4">
-                        <div className={`p-2 rounded-lg ${getStatusColor(order.status)}`}>
-                          {getStatusIcon(order.status)}
+                        <div className={`p-2 rounded-lg ${getStatusColor(order.status || 'PENDING')}`}>
+                          {getStatusIcon(order.status || 'PENDING')}
                         </div>
                         
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
                             <h3 className="font-semibold text-slate-800">
-                              Sipariş #{order.id.slice(-8)}
+                              Sipariş #{order.id?.slice(-8) || 'N/A'}
                             </h3>
-                            <Badge className={getStatusColor(order.status)}>
+                            <Badge className={getStatusColor(order.status || 'PENDING')}>
                               {ORDER_STATUS[order.status as keyof typeof ORDER_STATUS] || order.status}
                             </Badge>
                           </div>
                           
                           <p className="text-sm text-professional-gray mb-2">
-                            {format(new Date(order.createdAt), 'dd MMMM yyyy HH:mm', { locale: tr })}
+                            {order.createdAt ? format(new Date(order.createdAt), 'dd MMMM yyyy HH:mm', { locale: tr }) : 'Tarih bilgisi yok'}
                           </p>
                           
                           <div className="flex items-center justify-between">
@@ -340,7 +340,7 @@ export default function Orders() {
                       <div className="mt-4 p-3 bg-slate-50 rounded-lg">
                         <p className="text-sm font-medium text-slate-800 mb-1">Teslimat Adresi:</p>
                         <p className="text-sm text-professional-gray">
-                          {JSON.stringify(order.shippingAddress).replace(/[{}"]/g, '').replace(/,/g, ', ')}
+                          {typeof order.shippingAddress === 'string' ? order.shippingAddress : JSON.stringify(order.shippingAddress || {}).replace(/[{}"]/g, '').replace(/,/g, ', ')}
                         </p>
                       </div>
                     )}
@@ -378,12 +378,12 @@ export default function Orders() {
                     <div className="flex justify-between">
                       <span className="text-sm text-professional-gray">Tarih:</span>
                       <span className="font-medium">
-                        {format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy HH:mm', { locale: tr })}
+                        {selectedOrder.createdAt ? format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy HH:mm', { locale: tr }) : 'Tarih bilgisi yok'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-professional-gray">Durum:</span>
-                      <Badge className={getStatusColor(selectedOrder.status)}>
+                      <Badge className={getStatusColor(selectedOrder.status || 'PENDING')}>
                         {ORDER_STATUS[selectedOrder.status as keyof typeof ORDER_STATUS] || selectedOrder.status}
                       </Badge>
                     </div>
@@ -436,7 +436,7 @@ export default function Orders() {
                       <div className="flex-1">
                         <label className="text-sm text-professional-gray">Sipariş Durumu:</label>
                         <Select
-                          value={selectedOrder.status}
+                          value={selectedOrder.status || 'PENDING'}
                           onValueChange={(status) => updateOrderStatusMutation.mutate({ 
                             orderId: selectedOrder.id, 
                             status 
