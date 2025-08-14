@@ -71,7 +71,7 @@ async function generateDailyPlan(data: any): Promise<PlanProposal | null> {
 
 Your role is to analyze daily metrics, user feedback, and strategic roadmap to generate ONE high-impact daily improvement plan.
 
-CRITICAL PRIORITY: Focus heavily on VISUAL IMPROVEMENTS and UI/UX enhancements. The user specifically wants the ChatGPT system to improve the website's visual appearance, animations, design, and user experience alongside functional features.
+CRITICAL PRIORITY: COMPLETE DASHBOARD REDESIGN AND DEVELOPMENT. The user has specifically tasked the ChatGPT system to completely develop and update the dashboard page with comprehensive improvements, modern design, advanced features, and enhanced user experience. This is the TOP PRIORITY above all other tasks.
 
 CONTEXT:
 - VetTrack Pro is a comprehensive SaaS platform for veterinary clinic management

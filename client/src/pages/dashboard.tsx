@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import StatsCard from '@/components/dashboard/stats-card';
 import TodaySchedule from '@/components/dashboard/today-schedule';
 import UrgentNotifications from '@/components/dashboard/urgent-notifications';
+import AnalyticsChart from '@/components/dashboard/analytics-chart';
+import NotificationCenter from '@/components/dashboard/notification-center';
+import QuickActionsHub from '@/components/dashboard/quick-actions-hub';
+import PatientOverview from '@/components/dashboard/patient-overview';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import PetCareAssistant from '@/components/ai/pet-care-assistant';
 import { Button } from '@/components/ui/button';
@@ -50,9 +54,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+    <div className="space-y-8">
+      {/* Enhanced Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Bugünkü Randevular"
           value={(stats as any)?.todayAppointments || 0}
@@ -87,8 +91,30 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Main Dashboard Grid */}
+      {/* Quick Actions Hub */}
+      <QuickActionsHub />
+
+      {/* Analytics Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <AnalyticsChart 
+          type="appointments" 
+          title="Randevu Trendi" 
+          className="lg:col-span-1"
+        />
+        <AnalyticsChart 
+          type="revenue" 
+          title="Gelir Analizi" 
+          className="lg:col-span-1"
+        />
+        <AnalyticsChart 
+          type="patients" 
+          title="Hasta Sayısı" 
+          className="lg:col-span-1"
+        />
+      </div>
+
+      {/* Enhanced Dashboard Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Today's Schedule */}
         <div className="lg:col-span-2">
           <TodaySchedule appointments={(todayAppointments as any) || []} isLoading={appointmentsLoading} />
@@ -146,52 +172,26 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Notification Center */}
+        <div className="lg:col-span-2">
+          <NotificationCenter />
+        </div>
+      </div>
+
+      {/* Patient Overview and Additional Features */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Patient Overview */}
+        <div className="lg:col-span-2">
+          <PatientOverview />
+        </div>
+
         {/* Right Sidebar */}
         <div className="space-y-6">
           {/* Urgent Notifications */}
           <UrgentNotifications />
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Hızlı İşlemler</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  className="flex flex-col items-center justify-center p-4 h-auto text-center hover:border-medical-blue hover:bg-blue-50"
-                >
-                  <i className="fas fa-calendar-plus text-medical-blue text-xl mb-2"></i>
-                  <span className="text-sm font-medium">Yeni Randevu</span>
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="flex flex-col items-center justify-center p-4 h-auto text-center hover:border-healthcare-green hover:bg-green-50"
-                >
-                  <i className="fas fa-paw text-healthcare-green text-xl mb-2"></i>
-                  <span className="text-sm font-medium">Hasta Ekle</span>
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="flex flex-col items-center justify-center p-4 h-auto text-center hover:border-action-teal hover:bg-teal-50"
-                >
-                  <i className="fas fa-syringe text-action-teal text-xl mb-2"></i>
-                  <span className="text-sm font-medium">Aşı Kaydet</span>
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="flex flex-col items-center justify-center p-4 h-auto text-center hover:border-green-500 hover:bg-green-50"
-                >
-                  <MessageCircle className="text-green-500 h-5 w-5 mb-2" />
-                  <span className="text-sm font-medium">WhatsApp Gönder</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* AI Pet Care Assistant */}
+          <PetCareAssistant />
 
           {/* Featured Products */}
           <Card>

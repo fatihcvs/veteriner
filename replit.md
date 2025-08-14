@@ -24,6 +24,8 @@ Development Authority: Complete autonomous development authority. Continuous dev
 
 **Visual Enhancement Mandate**: ChatGPT auto-dev system must prioritize visual website improvements alongside functional development. This includes UI/UX enhancements, design improvements, animation additions, responsive design optimization, and modern visual elements to create a premium veterinary platform experience.
 
+**Dashboard Development Priority**: ChatGPT system is specifically tasked with completely developing and updating the dashboard page. This includes comprehensive redesign, advanced visualizations, interactive elements, real-time data displays, modern layouts, and enhanced user experience for the main dashboard interface.
+
 ## System Architecture
 
 ### Frontend Architecture
