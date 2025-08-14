@@ -419,4 +419,5 @@ ${fs.readFileSync('README.md', 'utf8').replace(/^# .+\n\n/, '').replace(/> Last 
 }
 
 // Execute if run directly
-main().catch(console.error);
+// Use the new dashboard-focused implementation instead
+require('./auto-implement-dashboard.ts');

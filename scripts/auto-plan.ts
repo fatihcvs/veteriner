@@ -134,15 +134,40 @@ Generate a focused micro-improvement that can be safely implemented in 5 minutes
 
     const plan = JSON.parse(response.choices[0].message.content || "{}");
     
-    // Force plan generation - AGGRESSIVE MODE
-    if (!plan.title) plan.title = "Micro System Optimization";
-    if (!plan.impact) plan.impact = "MEDIUM";
-    if (!plan.effort) plan.effort = "LOW";
-    if (!plan.risk) plan.risk = "VERY_LOW";
-    if (!plan.description) plan.description = "Continuous micro-improvement for VetTrack Pro system enhancement.";
-    if (!plan.tasks) plan.tasks = ["Optimize system performance", "Enhance user experience", "Improve code quality"];
-    if (!plan.success_criteria) plan.success_criteria = ["System runs smoothly", "No breaking changes", "Improved metrics"];
-    if (!plan.rollback_triggers) plan.rollback_triggers = ["Build failure", "API downtime"];
+    // DASHBOARD FOCUSED PLAN GENERATION - NO MORE GENERIC OPTIMIZATION
+    const dashboardTasks = [
+      "Enhanced Dashboard Real-time Charts",
+      "Interactive Patient Health Timeline", 
+      "Advanced Appointment Calendar Widget",
+      "Smart Notification System Upgrade",
+      "Patient Overview Performance Metrics",
+      "Dashboard Search & Filter Enhancement",
+      "Mobile Dashboard Responsiveness",
+      "Dashboard Theme Customization",
+      "Quick Actions Workflow Optimization",
+      "Analytics Data Export Features"
+    ];
+    
+    const randomTask = dashboardTasks[Math.floor(Math.random() * dashboardTasks.length)];
+    
+    if (!plan.title) plan.title = randomTask;
+    if (!plan.impact) plan.impact = "HIGH";
+    if (!plan.effort) plan.effort = "MEDIUM";
+    if (!plan.risk) plan.risk = "LOW";
+    if (!plan.description) plan.description = `Implement ${randomTask} for enhanced dashboard functionality and user experience in VetTrack Pro veterinary management platform.`;
+    if (!plan.tasks) plan.tasks = [
+      `Design and implement ${randomTask}`,
+      "Add interactive elements and animations", 
+      "Ensure mobile responsiveness",
+      "Test dashboard performance"
+    ];
+    if (!plan.success_criteria) plan.success_criteria = [
+      "Dashboard feature working smoothly",
+      "Performance metrics improved", 
+      "User experience enhanced",
+      "Mobile compatibility maintained"
+    ];
+    if (!plan.rollback_triggers) plan.rollback_triggers = ["Dashboard performance degradation", "Mobile responsiveness issues"];
     
     console.log('🚀 AGGRESSIVE MODE: Plan generation forced every cycle!');
 
