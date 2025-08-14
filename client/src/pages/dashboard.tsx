@@ -3,9 +3,10 @@ import StatsCard from '@/components/dashboard/stats-card';
 import TodaySchedule from '@/components/dashboard/today-schedule';
 import UrgentNotifications from '@/components/dashboard/urgent-notifications';
 import LoadingSpinner from '@/components/common/loading-spinner';
+import PetCareAssistant from '@/components/ai/pet-care-assistant';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, MessageCircle, Calendar, ShoppingCart, QrCode, Bell, Shield, Heart } from 'lucide-react';
+import { Plus, MessageCircle, Calendar, ShoppingCart, QrCode, Bell, Shield, Heart, Brain, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'wouter';
 
@@ -454,6 +455,11 @@ function PetOwnerDashboard({ pets, orders, appointments }: { pets: any[], orders
           )}
         </CardContent>
       </Card>
+
+      {/* AI Pet Care Assistant */}
+      <div className="mb-6">
+        <PetCareAssistant />
+      </div>
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

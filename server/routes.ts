@@ -7,6 +7,7 @@ import { insertPetSchema, updatePetSchema, insertVaccinationEventSchema, insertA
 import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
 import { pdfService } from "./services/pdf";
+import aiRoutes from "./routes/ai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -14,6 +15,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin routes
   setupAdminRoutes(app);
+
+  // AI routes
+  app.use('/api/ai', aiRoutes);
 
   // Start scheduler service
   schedulerService.start();

@@ -276,6 +276,21 @@ export const appointments = pgTable("appointments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const aiConsultations = pgTable("ai_consultations", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  petId: uuid("pet_id").references(() => pets.id).notNull(),
+  question: text("question").notNull(),
+  response: text("response").notNull(),
+  category: varchar("category").notNull(), // health, nutrition, behavior, general
+  confidence: decimal("confidence", { precision: 3, scale: 2 }),
+  urgencyLevel: varchar("urgency_level").default('medium'), // low, medium, high, emergency
+  veterinaryRecommendation: boolean("veterinary_recommendation").default(false),
+  recommendations: jsonb("recommendations").default([]),
+  followUpQuestions: jsonb("follow_up_questions").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Type exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -312,6 +327,9 @@ export type PetOwnerProfile = typeof petOwnerProfiles.$inferSelect;
 
 export type InsertMedicalRecord = typeof medicalRecords.$inferInsert;
 export type MedicalRecord = typeof medicalRecords.$inferSelect;
+
+export type InsertAiConsultation = typeof aiConsultations.$inferInsert;
+export type AiConsultation = typeof aiConsultations.$inferSelect;
 
 // Zod schemas
 export const insertPetSchema = createInsertSchema(pets).omit({
@@ -355,6 +373,11 @@ export const insertMedicalRecordSchema = createInsertSchema(medicalRecords).omit
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertAiConsultationSchema = createInsertSchema(aiConsultations).omit({
+  id: true,
+  createdAt: true,
 });
 
 // User schemas for email-based authentication
