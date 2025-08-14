@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, requireAuth } from "./auth";
+import { setupAuth, requireAuth, requireRole } from "./auth";
 import { setupAdminRoutes } from "./admin";
 import { insertPetSchema, updatePetSchema, insertVaccinationEventSchema, insertAppointmentSchema, insertFoodProductSchema, updateUserProfileSchema, updatePetOwnerProfileSchema } from "@shared/schema";
 import { schedulerService } from "./services/scheduler";

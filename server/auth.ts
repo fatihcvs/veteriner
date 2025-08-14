@@ -202,3 +202,19 @@ export function requireAuth(req: any, res: any, next: any) {
   }
   next();
 }
+
+// Middleware to check user roles
+export function requireRole(roles: string[]) {
+  return (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const user = req.user as SelectUser;
+    if (!roles.includes(user.role)) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    
+    next();
+  };
+}
