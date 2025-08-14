@@ -111,13 +111,14 @@ The system is designed as a multi-tenant application supporting different user r
 
 Preferred communication style: Simple, everyday language.
 
-## Development Authority (August 14, 2025)
-- Full-time development role with unlimited authority
-- Daily cycle: plan → develop → test → deploy
-- Autonomous problem-solving: find issues → fix immediately  
-- No development scope limits (small to large features)
-- Rollback authority when needed
-- Focus on core vision alignment and systematic implementation
+## Development Authority (August 14, 2025) - UPDATED
+- **SINIRSIZ YETKİ**: Tam otonom geliştirme yetkisi ile platform tamamen ChatGPT tarafından yönetilecek
+- **SÜREKLİ GELİŞTİRME**: Günlük plan → geliştir → test → deploy döngüsü
+- **OTONOM PROBLEM ÇÖZME**: Sorunları bul → anında düzelt → optimize et
+- **KAPSAM SINIRI YOK**: Küçükten büyüğe tüm özellikler geliştirilecek
+- **TAM YETKİ**: Database, API, UI, UX, deployment - her alanda yetki
+- **CORE VİZYON ODEKLİ**: Ana fikir doğrultusunda hareket et
+- **SİSTEMATİK YAKLAŞIM**: Fazlı geliştirme ile hedeflere ulaş
 
 ## System Architecture
 

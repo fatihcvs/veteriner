@@ -121,7 +121,7 @@ export default function SmartRecommendations() {
                       </span>
                       {product.species && (
                         <Badge variant="outline" className="text-xs">
-                          {PET_SPECIES[product.species as keyof typeof PET_SPECIES] || product.species}
+                          {product.species ? (PET_SPECIES[product.species as keyof typeof PET_SPECIES] || product.species) : 'Genel'}
                         </Badge>
                       )}
                     </div>
