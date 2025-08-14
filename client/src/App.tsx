@@ -24,7 +24,7 @@ import Settings from "@/pages/settings";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 import AppLayout from "@/components/layout/app-layout";
-import { lazy } from "react";
+import AutoDevMonitor from "@/pages/admin/auto-dev-monitor";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -51,7 +51,7 @@ function Router() {
           <Route path="/staff" component={Staff} />
           <Route path="/notifications" component={Notifications} />
           <Route path="/admin" component={AdminPanel} />
-          <Route path="/admin/auto-dev" component={lazy(() => import('./pages/admin/auto-dev-monitor'))} />
+          <Route path="/admin/auto-dev" component={AutoDevMonitor} />
           <Route path="/profile" component={Profile} />
           <Route path="/settings" component={Settings} />
         </AppLayout>
