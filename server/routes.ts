@@ -758,6 +758,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Pet Detail Endpoints
+  app.get('/api/admin/pets/:id/details', requireAuth, requireRole(['SUPER_ADMIN', 'CLINIC_ADMIN']), async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const pet = await storage.getPet(petId);
+      if (!pet) {
+        return res.status(404).json({ message: "Pet not found" });
+      }
+      res.json(pet);
+    } catch (error) {
+      console.error("Error fetching pet details:", error);
+      res.status(500).json({ message: "Failed to fetch pet details" });
+    }
+  });
+
+  app.get('/api/admin/pets/:id/vaccinations', requireAuth, requireRole(['SUPER_ADMIN', 'CLINIC_ADMIN']), async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const vaccinations = await storage.getPetVaccinations(petId);
+      
+      // Enrich with vaccine and vet information
+      const enrichedVaccinations = await Promise.all(
+        vaccinations.map(async (vaccination) => {
+          const vaccines = await storage.getVaccines();
+          const vaccine = vaccines.find(v => v.id === vaccination.vaccineId);
+          const vet = await storage.getUser(vaccination.vetUserId);
+          return {
+            ...vaccination,
+            vaccineName: vaccine?.name || 'Unknown Vaccine',
+            vaccineSpecies: vaccine?.species || '',
+            vetName: vet ? `${vet.firstName} ${vet.lastName}` : 'Unknown Vet'
+          };
+        })
+      );
+      
+      res.json(enrichedVaccinations);
+    } catch (error) {
+      console.error("Error fetching pet vaccinations:", error);
+      res.status(500).json({ message: "Failed to fetch pet vaccinations" });
+    }
+  });
+
+  app.get('/api/admin/pets/:id/appointments', requireAuth, requireRole(['SUPER_ADMIN', 'CLINIC_ADMIN']), async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const appointments = await storage.getPetAppointments(petId);
+      
+      // Enrich with vet information
+      const enrichedAppointments = await Promise.all(
+        appointments.map(async (appointment) => {
+          const vet = await storage.getUser(appointment.vetUserId);
+          return {
+            ...appointment,
+            vetName: vet ? `${vet.firstName} ${vet.lastName}` : 'Unknown Vet'
+          };
+        })
+      );
+      
+      res.json(enrichedAppointments);
+    } catch (error) {
+      console.error("Error fetching pet appointments:", error);
+      res.status(500).json({ message: "Failed to fetch pet appointments" });
+    }
+  });
+
+  app.get('/api/admin/pets/:id/feeding-plans', requireAuth, requireRole(['SUPER_ADMIN', 'CLINIC_ADMIN']), async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const feedingPlans = await storage.getPetFeedingPlans(petId);
+      
+      // Enrich with food product information
+      const enrichedPlans = await Promise.all(
+        feedingPlans.map(async (plan) => {
+          const foodProducts = await storage.getFoodProducts();
+          const foodProduct = foodProducts.find(p => p.id === plan.foodProductId);
+          return {
+            ...plan,
+            foodProductName: foodProduct?.name || 'Unknown Product'
+          };
+        })
+      );
+      
+      res.json(enrichedPlans);
+    } catch (error) {
+      console.error("Error fetching pet feeding plans:", error);
+      res.status(500).json({ message: "Failed to fetch pet feeding plans" });
+    }
+  });
+
+  app.put('/api/admin/pets/:id', requireAuth, requireRole(['SUPER_ADMIN', 'CLINIC_ADMIN']), async (req: any, res) => {
+    try {
+      const petId = req.params.id;
+      const petData = {
+        ...req.body,
+        weightKg: req.body.weightKg ? String(req.body.weightKg) : undefined
+      };
+      
+      const validatedData = updatePetSchema.parse(petData);
+      const updatedPet = await storage.updatePet(petId, validatedData);
+      
+      res.json(updatedPet);
+    } catch (error) {
+      console.error("Error updating pet:", error);
+      res.status(500).json({ message: "Failed to update pet" });
+    }
+  });
+
   // Notifications
   app.get('/api/notifications', requireAuth, async (req: any, res) => {
     try {

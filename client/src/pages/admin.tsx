@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import LoadingSpinner from '@/components/common/loading-spinner';
+import PetEditModal from '@/components/admin/pet-edit-modal';
 
 interface AdminStats {
   totalUsers: number;
@@ -58,6 +59,8 @@ function AdminPanel() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
+  const [selectedPet, setSelectedPet] = useState<any>(null);
+  const [editPetModalOpen, setEditPetModalOpen] = useState(false);
   const [editUserForm, setEditUserForm] = useState({
     firstName: '',
     lastName: '',
@@ -514,7 +517,8 @@ function AdminPanel() {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            toast({ title: "Hayvan düzenleme özelliği yakında aktif olacak" });
+                            setSelectedPet(pet);
+                            setEditPetModalOpen(true);
                           }}
                         >
                           <Edit3 className="h-4 w-4 mr-1" />
@@ -783,6 +787,16 @@ function AdminPanel() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Pet Edit Modal */}
+      <PetEditModal
+        pet={selectedPet}
+        isOpen={editPetModalOpen}
+        onClose={() => {
+          setEditPetModalOpen(false);
+          setSelectedPet(null);
+        }}
+      />
     </div>
   );
 }

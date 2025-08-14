@@ -1391,6 +1391,19 @@ export class MemStorage implements IStorage {
       });
   }
 
+  async getPetAppointments(petId: string): Promise<any[]> {
+    return Array.from(this.appointments.values())
+      .filter(appointment => appointment.petId === petId)
+      .sort((a, b) => {
+        try {
+          return new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime();
+        } catch (error) {
+          console.error('Error sorting appointments:', error);
+          return 0;
+        }
+      });
+  }
+
   // Notification operations
   async createNotification(notificationData: InsertNotification): Promise<Notification> {
     const notification: Notification = {
@@ -1496,6 +1509,12 @@ export class MemStorage implements IStorage {
         const foodProduct = this.foodProducts.get(plan.foodProductId);
         return { ...plan, pet, foodProduct };
       });
+  }
+
+  async getPetFeedingPlans(petId: string): Promise<any[]> {
+    return Array.from(this.feedingPlans.values())
+      .filter(plan => plan.petId === petId)
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }
 
   async getFeedingPlan(id: string): Promise<any | undefined> {
