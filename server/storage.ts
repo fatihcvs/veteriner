@@ -11,6 +11,7 @@ import {
   orderItems,
   notifications,
   appointments,
+  medicalRecords,
   petOwnerProfiles,
   type User,
   type UpsertUser,
@@ -31,12 +32,15 @@ import {
   type InsertNotification,
   type PetOwnerProfile,
   type InsertPetOwnerProfile,
+  type MedicalRecord,
+  type InsertMedicalRecord,
   type UpdateUserProfile,
   type UpdatePetOwnerProfile,
 } from '@shared/schema';
 import { randomUUID } from 'crypto';
 import { db } from './db';
 import { eq, sql, desc, and, gte, lt, or } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
@@ -109,7 +113,13 @@ export interface IStorage {
   getClinicAllAppointments(clinicId: string): Promise<any[]>;
   getUserAppointments(userId: string): Promise<any[]>;
   updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
-  
+
+  // Medical record operations
+  getClinicMedicalRecords(clinicId: string): Promise<any[]>;
+  createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
+  updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord>;
+  deleteMedicalRecord(id: string): Promise<void>;
+
   // Feeding plan operations
   createFeedingPlan(plan: any): Promise<any>;
   getFeedingPlans(userId?: string, clinicId?: string): Promise<any[]>;
@@ -439,6 +449,55 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointments.id, id))
       .returning();
     return appointment;
+  }
+
+  // Medical record operations
+  async getClinicMedicalRecords(clinicId: string): Promise<any[]> {
+    const owner = alias(users, 'owner');
+    const vet = alias(users, 'vet');
+    return await db
+      .select({
+        id: medicalRecords.id,
+        petId: medicalRecords.petId,
+        type: medicalRecords.type,
+        title: medicalRecords.title,
+        description: medicalRecords.description,
+        diagnosis: medicalRecords.diagnosis,
+        treatment: medicalRecords.treatment,
+        prescription: medicalRecords.prescription,
+        visitDate: medicalRecords.visitDate,
+        nextVisitDate: medicalRecords.nextVisitDate,
+        status: medicalRecords.status,
+        attachments: medicalRecords.attachments,
+        createdAt: medicalRecords.createdAt,
+        petName: pets.name,
+        petSpecies: pets.species,
+        ownerName: sql<string>`concat(${owner.firstName}, ' ', ${owner.lastName})`,
+        vetName: sql<string>`concat(${vet.firstName}, ' ', ${vet.lastName})`,
+      })
+      .from(medicalRecords)
+      .innerJoin(pets, eq(medicalRecords.petId, pets.id))
+      .innerJoin(owner, eq(pets.ownerId, owner.id))
+      .innerJoin(vet, eq(medicalRecords.vetUserId, vet.id))
+      .where(eq(pets.clinicId, clinicId));
+  }
+
+  async createMedicalRecord(recordData: InsertMedicalRecord): Promise<MedicalRecord> {
+    const [record] = await db.insert(medicalRecords).values(recordData).returning();
+    return record;
+  }
+
+  async updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord> {
+    const [record] = await db
+      .update(medicalRecords)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(medicalRecords.id, id))
+      .returning();
+    return record;
+  }
+
+  async deleteMedicalRecord(id: string): Promise<void> {
+    await db.delete(medicalRecords).where(eq(medicalRecords.id, id));
   }
 
   // Feeding plan operations (placeholder)

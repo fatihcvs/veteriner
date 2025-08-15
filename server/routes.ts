@@ -8,6 +8,7 @@ import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
 import { pdfService } from "./services/pdf";
 import aiRoutes from "./routes/ai";
+import medicalRecordRoutes from "./routes/medical-records";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -18,6 +19,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI routes
   app.use('/api/ai', aiRoutes);
+
+  // Medical record routes
+  app.use('/api/medical-records', medicalRecordRoutes);
   
   // Auto-Dev monitoring routes
   app.use('/api/admin/auto-dev', requireAuth, requireRole(['SUPER_ADMIN']), (await import('./routes/admin-auto-dev')).default);
