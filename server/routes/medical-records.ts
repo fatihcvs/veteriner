@@ -25,7 +25,10 @@ router.get('/', async (req: any, res) => {
 
 router.post('/', async (req: any, res) => {
   try {
-    const data = insertMedicalRecordSchema.parse(req.body);
+    const data = insertMedicalRecordSchema.parse({
+      ...req.body,
+      vetUserId: req.user.id,
+    });
     const record = await storage.createMedicalRecord(data);
     res.json(record);
   } catch (error: any) {
