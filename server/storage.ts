@@ -83,6 +83,7 @@ export interface IStorage {
   
   // Vaccination operations
   getVaccines(): Promise<Vaccine[]>;
+  getVaccine(id: string): Promise<Vaccine | undefined>;
   createVaccine(vaccine: InsertVaccine): Promise<Vaccine>;
   getVaccinationEvent(id: string): Promise<VaccinationEvent | undefined>;
   createVaccinationEvent(event: InsertVaccinationEvent): Promise<VaccinationEvent>;
@@ -316,6 +317,11 @@ export class DatabaseStorage implements IStorage {
   // Vaccination operations
   async getVaccines(): Promise<Vaccine[]> {
     return await db.select().from(vaccines);
+  }
+
+  async getVaccine(id: string): Promise<Vaccine | undefined> {
+    const [vaccine] = await db.select().from(vaccines).where(eq(vaccines.id, id));
+    return vaccine || undefined;
   }
 
   async createVaccine(vaccineData: InsertVaccine): Promise<Vaccine> {
