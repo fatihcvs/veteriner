@@ -23,9 +23,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Medical record routes
   app.use('/api/medical-records', medicalRecordRoutes);
   
-  // Auto-Dev monitoring routes
-  app.use('/api/admin/auto-dev', requireAuth, requireRole(['SUPER_ADMIN']), (await import('./routes/admin-auto-dev')).default);
-
   // Start scheduler service
   schedulerService.start();
 
