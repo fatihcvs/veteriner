@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Plus, Search, Filter, Eye, Calendar, Syringe, Info } from 'lucide-react';
+import { Plus, Search, Filter, Eye, Calendar, Syringe, Info, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -256,6 +256,34 @@ function PetDetailView({ pet }: { pet: Pet }) {
     },
   });
 
+  const { toast } = useToast();
+
+  const handleDownloadCard = async () => {
+    try {
+      const response = await fetch(`/api/pets/${pet.id}/vaccination-card`);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `asi-karti-${pet.name}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        toast({ title: 'Başarılı', description: 'Aşı kartı indirildi.' });
+      } else {
+        throw new Error('Download failed');
+      }
+    } catch (error) {
+      toast({
+        title: 'Hata',
+        description: 'Aşı kartı indirilemedi.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const calculateAge = (birthDate: string | Date) => {
     const birth = new Date(birthDate);
     const today = new Date();
@@ -368,11 +396,15 @@ function PetDetailView({ pet }: { pet: Pet }) {
 
         {/* Vaccination Status Overview */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Syringe className="w-5 h-5" />
               <span>Aşı Durumu</span>
             </CardTitle>
+            <Button variant="outline" size="sm" onClick={handleDownloadCard}>
+              <Download className="w-4 h-4 mr-1" />
+              Aşı Kartı
+            </Button>
           </CardHeader>
           <CardContent className="space-y-4">
             {vaccinationsLoading ? (
