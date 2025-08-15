@@ -37,4 +37,14 @@ router.post('/', async (req: any, res) => {
   }
 });
 
+router.delete('/:id', async (req: any, res) => {
+  try {
+    await storage.deleteMedicalRecord(req.params.id);
+    res.json({ message: 'Medical record deleted' });
+  } catch (error) {
+    console.error('Error deleting medical record:', error);
+    res.status(500).json({ message: 'Failed to delete medical record' });
+  }
+});
+
 export default router;

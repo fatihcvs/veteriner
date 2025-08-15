@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Stethoscope } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Stethoscope, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -132,6 +132,23 @@ export default function MedicalRecords() {
       toast({
         title: 'Hata',
         description: 'Kayıt oluşturulamadı.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteRecordMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/medical-records/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/medical-records'] });
+      toast({ title: 'Kayıt silindi' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Hata',
+        description: error.message || 'Kayıt silinemedi.',
         variant: 'destructive',
       });
     },
@@ -460,6 +477,15 @@ export default function MedicalRecords() {
                           Dosyalar
                         </Button>
                       )}
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteRecordMutation.mutate(record.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Sil
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
