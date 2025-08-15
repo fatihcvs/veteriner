@@ -36,6 +36,13 @@ interface StaffMember {
   permissions?: string[];
 }
 
+interface StaffStats {
+  totalStaff: number;
+  activeStaff: number;
+  veterinarians: number;
+  staffOnLeave: number;
+}
+
 export default function Staff() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('');
@@ -43,13 +50,13 @@ export default function Staff() {
   const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
 
-  const { data: staffMembers = [], isLoading } = useQuery<StaffMember[]>({
-    queryKey: ['/api/staff'],
-  });
+    const { data: staffMembers = [], isLoading } = useQuery<StaffMember[]>({
+      queryKey: ['/api/staff'],
+    });
 
-  const { data: staffStats = {}, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/staff/stats'],
-  });
+    const { data: staffStats, isLoading: statsLoading } = useQuery<StaffStats>({
+      queryKey: ['/api/staff/stats'],
+    });
 
   const roles = {
     'SUPER_ADMIN': { label: 'Süper Admin', color: 'bg-purple-100 text-purple-800', icon: '👑' },
@@ -118,7 +125,7 @@ export default function Staff() {
   };
 
   // Use API stats if available, otherwise fall back to local calculation
-  const displayStats = Object.keys(staffStats).length > 0 ? staffStats : localStaffStats;
+    const displayStats = staffStats ?? localStaffStats;
 
   if (isLoading) {
     return (
