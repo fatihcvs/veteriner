@@ -180,4 +180,8 @@ export class WhatsAppService {
     const message = `Sipariş durumu güncellemesi: #${orderNumber} - ${orderStatus}`;
     return this.provider.sendMessage(to, message);
   }
+
+  async sendMessage(to: string, message: string): Promise<string> {
+    return this.provider.sendMessage(to, message);
+  }
 }

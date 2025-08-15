@@ -194,7 +194,18 @@ export class DatabaseStorage implements IStorage {
     if (existing) {
       return existing;
     }
-    return this.createUser(user);
+    return this.createUser({
+      ...user,
+      role: user.role ?? 'PET_OWNER',
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      profileImageUrl: user.profileImageUrl ?? null,
+      phone: user.phone ?? null,
+      whatsappPhone: user.whatsappPhone ?? null,
+      whatsappOptIn: user.whatsappOptIn ?? false,
+      locale: user.locale ?? 'tr',
+      verifiedAt: user.verifiedAt ?? null,
+    });
   }
 
   async updateUser(id: string, updates: UpdateUserProfile): Promise<User> {
@@ -411,20 +422,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClinicAppointments(clinicId: string, date?: string): Promise<any[]> {
-    let query = db.select().from(appointments).where(eq(appointments.clinicId, clinicId));
-    
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
-      query = query.where(and(
-        gte(appointments.scheduledAt, startDate),
-        lt(appointments.scheduledAt, endDate)
-      ));
+      const conditions = [eq(appointments.clinicId, clinicId)];
+
+      if (date) {
+        const startDate = new Date(date);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 1);
+        conditions.push(gte(appointments.scheduledAt, startDate));
+        conditions.push(lt(appointments.scheduledAt, endDate));
+      }
+
+      return await db.select().from(appointments).where(and(...conditions));
     }
-    
-    return await query;
-  }
 
   async getClinicAllAppointments(clinicId: string): Promise<any[]> {
     return await db.select().from(appointments).where(eq(appointments.clinicId, clinicId));
@@ -608,18 +617,20 @@ export class DatabaseStorage implements IStorage {
     return staff.find(s => s.id === staffId);
   }
 
-  async createStaffMember(staffData: any): Promise<any> {
-    const newUser = await this.createUser({
-      email: staffData.email,
-      password: staffData.password || await hashPassword('defaultpass123'),
-      firstName: staffData.firstName,
-      lastName: staffData.lastName,
-      phone: staffData.phone,
-      role: staffData.role,
-      verifiedAt: new Date(),
-      whatsappOptIn: false,
-      locale: 'tr'
-    });
+    async createStaffMember(staffData: any): Promise<any> {
+      const newUser = await this.createUser({
+        email: staffData.email,
+        password: staffData.password || await hashPassword('defaultpass123'),
+        firstName: staffData.firstName,
+        lastName: staffData.lastName,
+        phone: staffData.phone,
+        profileImageUrl: staffData.profileImageUrl ?? null,
+        whatsappPhone: staffData.whatsappPhone ?? null,
+        role: staffData.role,
+        verifiedAt: new Date(),
+        whatsappOptIn: false,
+        locale: 'tr'
+      });
 
     return {
       id: newUser.id,
@@ -804,21 +815,22 @@ async function seedData() {
   try {
     // Check if admin user exists
     const adminUser = await storage.getUserByEmail('admin@vettrack.pro');
-    if (!adminUser) {
-      console.log('Creating admin user...');
-      await storage.createUser({
-        email: 'admin@vettrack.pro',
-        password: await hashPassword('admin123'),
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'SUPER_ADMIN',
-        phone: '+90555123456',
-        whatsappPhone: '+90555123456',
-        whatsappOptIn: true,
-        locale: 'tr',
-        verifiedAt: new Date(),
-      });
-    }
+      if (!adminUser) {
+        console.log('Creating admin user...');
+        await storage.createUser({
+          email: 'admin@vettrack.pro',
+          password: await hashPassword('admin123'),
+          firstName: 'Admin',
+          lastName: 'User',
+          role: 'SUPER_ADMIN',
+          phone: '+90555123456',
+          whatsappPhone: '+90555123456',
+          profileImageUrl: null,
+          whatsappOptIn: true,
+          locale: 'tr',
+          verifiedAt: new Date(),
+        });
+      }
 
     // Check if products exist
     const existingProducts = await storage.getFoodProducts();
