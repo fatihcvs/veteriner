@@ -264,12 +264,14 @@ export default function Orders() {
           ) : (
             <div className="space-y-4">
                 {filterOrdersByStatus(activeTab).map((order: Order) => {
-                  const formattedAddress =
-                    typeof order.shippingAddress === 'string'
-                      ? order.shippingAddress
-                      : JSON.stringify((order.shippingAddress as Record<string, unknown>) || {})
-                          .replace(/[{}]/g, '')
-                          .replace(/,/g, ', ');
+                  let formattedAddress = '';
+                  if (typeof order.shippingAddress === 'string') {
+                    formattedAddress = order.shippingAddress;
+                  } else {
+                    formattedAddress = JSON.stringify(order.shippingAddress ?? {})
+                      .replace(/[{}]/g, '')
+                      .replace(/,/g, ', ');
+                  }
                   return (
                     <Card key={order.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-6">
@@ -343,12 +345,12 @@ export default function Orders() {
                     </div>
 
                       {/* Shipping Address */}
-                      {order.shippingAddress && (
-                        <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                          <p className="text-sm font-medium text-slate-800 mb-1">Teslimat Adresi:</p>
-                          <p className="text-sm text-professional-gray">{formattedAddress}</p>
-                        </div>
-                      )}
+                        {order.shippingAddress ? (
+                          <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                            <p className="text-sm font-medium text-slate-800 mb-1">Teslimat Adresi:</p>
+                            <p className="text-sm text-professional-gray">{formattedAddress}</p>
+                          </div>
+                        ) : null}
                     </CardContent>
                   </Card>
                 );
