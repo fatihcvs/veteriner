@@ -91,9 +91,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : item
         );
       } else {
-        const imageUrl = product.images && product.images.length > 0 
-          ? (product.images as string[])[0] 
-          : null;
+        const imageUrl = product.images && product.images.length > 0
+          ? (product.images as string[])[0]
+          : undefined;
 
         toast({
           title: 'Sepete Eklendi',

@@ -50,7 +50,7 @@ export default function PetForm({ onSubmit, isLoading, initialData }: PetFormPro
       birthDate: data.birthDate || undefined,
       sex: data.sex || undefined,
     };
-    onSubmit(submitData);
+    onSubmit(submitData as any);
   };
 
   return (

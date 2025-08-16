@@ -15,9 +15,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen">
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden bg-white/70 backdrop-blur-md shadow-sm border-b px-4 py-3 flex items-center justify-between">
         <Button
           variant="ghost"
           size="sm"
@@ -56,7 +56,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {/* Main Content */}
         <div className="flex-1 lg:ml-64">
           {/* Desktop Header */}
-          <header className="hidden lg:flex bg-white shadow-sm border-b px-6 py-4 items-center justify-between">
+          <header className="hidden lg:flex bg-white/70 backdrop-blur-md shadow-sm border-b px-6 py-4 items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-slate-800">Pano</h2>
               <p className="text-professional-gray">Günlük aktiviteleriniz ve klinik durumu</p>
@@ -86,7 +86,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </header>
 
           {/* Page Content */}
-          <main className="p-4 lg:p-6">
+          <main className="max-w-7xl mx-auto p-4 lg:p-6">
             {children}
           </main>
         </div>

@@ -1,24 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: hsl(248 50% 97%);
-  --foreground: hsl(220 14% 16%);
+  --background: hsl(210 40% 98%);
+  --foreground: hsl(222 47% 11%);
   --card: hsl(0 0% 100%);
   --card-foreground: hsl(220 14% 16%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(220 14% 16%);
-  --primary: hsl(217 89% 61%);
-  --primary-foreground: hsl(0 0% 100%);
+  --primary: hsl(221 83% 53%);
+  --primary-foreground: hsl(210 40% 98%);
   --secondary: hsl(220 14% 16%);
   --secondary-foreground: hsl(0 0% 100%);
   --muted: hsl(220 14% 96%);
   --muted-foreground: hsl(220 12% 46%);
-  --accent: hsl(217 89% 61%);
-  --accent-foreground: hsl(0 0% 100%);
+  --accent: hsl(198 93% 60%);
+  --accent-foreground: hsl(222 47% 11%);
   --destructive: hsl(0 84% 60%);
   --destructive-foreground: hsl(0 0% 100%);
   --border: hsl(220 13% 91%);
@@ -45,7 +45,7 @@
   --alert-red: hsl(0 84% 60%);
   --professional-gray: hsl(215 16% 47%);
   
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Poppins', system-ui, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: 0.75rem;
@@ -102,7 +102,8 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(to bottom right, var(--background), var(--muted));
   }
 }
 

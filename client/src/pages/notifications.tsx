@@ -50,7 +50,14 @@ export default function Notifications() {
     queryKey: ['/api/notifications'],
   });
 
-  const { data: notificationStats = {}, isLoading: statsLoading } = useQuery({
+  interface NotificationStats {
+    total?: number;
+    pending?: number;
+    sent?: number;
+    failed?: number;
+  }
+
+  const { data: notificationStats, isLoading: statsLoading } = useQuery<NotificationStats>({
     queryKey: ['/api/notifications/stats'],
   });
 
@@ -366,7 +373,7 @@ export default function Notifications() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Toplam</p>
-                <p className="text-2xl font-bold text-slate-800">{notificationStats.total || totalNotifications}</p>
+                <p className="text-2xl font-bold text-slate-800">{notificationStats?.total ?? totalNotifications}</p>
               </div>
               <Bell className="h-8 w-8 text-medical-blue" />
             </div>
@@ -378,7 +385,7 @@ export default function Notifications() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Bekliyor</p>
-                <p className="text-2xl font-bold text-yellow-600">{notificationStats.pending || pendingNotifications}</p>
+                <p className="text-2xl font-bold text-yellow-600">{notificationStats?.pending ?? pendingNotifications}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
             </div>
@@ -390,7 +397,7 @@ export default function Notifications() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Gönderildi</p>
-                <p className="text-2xl font-bold text-green-600">{notificationStats.sent || sentNotifications}</p>
+                <p className="text-2xl font-bold text-green-600">{notificationStats?.sent ?? sentNotifications}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -402,7 +409,7 @@ export default function Notifications() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-professional-gray">Başarısız</p>
-                <p className="text-2xl font-bold text-red-600">{notificationStats.failed || failedNotifications}</p>
+                <p className="text-2xl font-bold text-red-600">{notificationStats?.failed ?? failedNotifications}</p>
               </div>
               <X className="h-8 w-8 text-red-600" />
             </div>
@@ -490,11 +497,14 @@ export default function Notifications() {
                           <Badge className={notificationTypes[notification.type].color}>
                             {notificationTypes[notification.type].label}
                           </Badge>
-                          {notification.channels?.map((channel: string, index: number) => (
-                            <Badge key={index} className={channels[channel]?.color || 'bg-gray-100 text-gray-800'}>
-                              {channels[channel]?.icon || '📱'} {channels[channel]?.label || channel}
-                            </Badge>
-                          ))}
+                            {notification.channels?.map((channel: string, index: number) => {
+                              const ch = channels[channel as keyof typeof channels];
+                              return (
+                                <Badge key={index} className={ch?.color || 'bg-gray-100 text-gray-800'}>
+                                  {ch?.icon || '📱'} {ch?.label || channel}
+                                </Badge>
+                              );
+                            })}
                           <Badge className={getStatusColor(notification.status)}>
                             {getStatusLabel(notification.status)}
                           </Badge>

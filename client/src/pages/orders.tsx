@@ -23,7 +23,7 @@ export default function Orders() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const { data: orders, isLoading, error } = useQuery({
+  const { data: orders = [], isLoading, error } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
     retry: false,
   });
@@ -62,9 +62,9 @@ export default function Orders() {
     }
   };
 
-  const filterOrdersByStatus = (status: string) => {
-    if (status === 'all') return (orders as any) || [];
-    return (orders as any)?.filter((order: Order) => order.status === status) || [];
+  const filterOrdersByStatus = (status: string): Order[] => {
+    if (status === 'all') return orders;
+    return orders.filter((order) => order.status === status);
   };
 
   const updateOrderStatusMutation = useMutation({
@@ -263,9 +263,18 @@ export default function Orders() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {filterOrdersByStatus(activeTab).map((order: Order) => (
-                <Card key={order.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
+                {filterOrdersByStatus(activeTab).map((order: Order) => {
+                  let formattedAddress = '';
+                  if (typeof order.shippingAddress === 'string') {
+                    formattedAddress = order.shippingAddress;
+                  } else {
+                    formattedAddress = JSON.stringify(order.shippingAddress ?? {})
+                      .replace(/[{}]/g, '')
+                      .replace(/,/g, ', ');
+                  }
+                  return (
+                    <Card key={order.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-4">
                         <div className={`p-2 rounded-lg ${getStatusColor(order.status || 'PENDING')}`}>
@@ -335,18 +344,17 @@ export default function Orders() {
                       </div>
                     </div>
 
-                    {/* Shipping Address */}
-                    {order.shippingAddress && (
-                      <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                        <p className="text-sm font-medium text-slate-800 mb-1">Teslimat Adresi:</p>
-                        <p className="text-sm text-professional-gray">
-                          {typeof order.shippingAddress === 'string' ? order.shippingAddress : JSON.stringify(order.shippingAddress || {}).replace(/[{}"]/g, '').replace(/,/g, ', ')}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      {/* Shipping Address */}
+                        {order.shippingAddress ? (
+                          <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                            <p className="text-sm font-medium text-slate-800 mb-1">Teslimat Adresi:</p>
+                            <p className="text-sm text-professional-gray">{formattedAddress}</p>
+                          </div>
+                        ) : null}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>

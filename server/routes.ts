@@ -8,6 +8,7 @@ import { schedulerService } from "./services/scheduler";
 import { notificationService } from "./services/notifications";
 import { pdfService } from "./services/pdf";
 import aiRoutes from "./routes/ai";
+import medicalRecordRoutes from "./routes/medical-records";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -18,10 +19,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI routes
   app.use('/api/ai', aiRoutes);
-  
-  // Auto-Dev monitoring routes
-  app.use('/api/admin/auto-dev', requireAuth, requireRole(['SUPER_ADMIN']), (await import('./routes/admin-auto-dev')).default);
 
+  // Medical record routes
+  app.use('/api/medical-records', medicalRecordRoutes);
+  
   // Start scheduler service
   schedulerService.start();
 
@@ -379,13 +380,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vaccinations = await storage.getPetVaccinations(petId);
       const clinic = await storage.getClinic(pet.clinicId);
       const owner = await storage.getUser(pet.ownerId);
-      
+
+      const detailedVaccinations = await Promise.all(
+        vaccinations.map(async v => {
+          const vaccine = await storage.getVaccine(v.vaccineId);
+          const vet = await storage.getUser(v.vetUserId);
+          return {
+            vaccineName: vaccine?.name || v.vaccineId,
+            administeredAt: new Date(v.administeredAt).toLocaleDateString('tr-TR'),
+            vetName: vet ? `${vet.firstName} ${vet.lastName}` : v.vetUserId,
+            lotNo: v.lotNo || '',
+            nextDueAt: v.nextDueAt ? new Date(v.nextDueAt).toLocaleDateString('tr-TR') : '',
+          };
+        })
+      );
+
       const cardData = {
         pet: {
           name: pet.name,
           species: pet.species,
           breed: pet.breed || '',
-          birthDate: pet.birthDate?.toString() || '',
+          birthDate: pet.birthDate ? new Date(pet.birthDate).toLocaleDateString('tr-TR') : '',
           microchipNo: pet.microchipNo || '',
           owner: owner ? `${owner.firstName} ${owner.lastName}` : '',
         },
@@ -394,13 +409,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           address: clinic?.address || '',
           phone: clinic?.phone || '',
         },
-        vaccinations: vaccinations.map(v => ({
-          vaccineName: v.vaccineId, // In real app, would join with vaccine table
-          administeredAt: v.administeredAt.toLocaleDateString('tr-TR'),
-          vetName: v.vetUserId, // In real app, would join with user table
-          lotNo: v.lotNo || '',
-          nextDueAt: v.nextDueAt?.toLocaleDateString('tr-TR') || '',
-        })),
+        vaccinations: detailedVaccinations,
       };
 
       const pdfBytes = await pdfService.generateVaccinationCard(cardData);

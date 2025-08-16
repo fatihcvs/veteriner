@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PET_SPECIES } from '@/lib/constants';
+import { PET_SPECIES, PET_SPECIES_MAP } from '@/lib/constants';
 import { FoodProduct } from '@shared/schema';
 import { useCart } from '@/hooks/useCart';
 
@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.species && (
             <div className="absolute top-3 right-3">
               <Badge variant="outline" className="bg-white">
-                {PET_SPECIES[product.species as keyof typeof PET_SPECIES] || product.species}
+                {PET_SPECIES_MAP[product.species as keyof typeof PET_SPECIES_MAP] || product.species}
               </Badge>
             </div>
           )}
@@ -191,7 +191,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-professional-gray">Uygun Hayvan:</span>
                       <Badge variant="outline">
-                        {PET_SPECIES[product.species as keyof typeof PET_SPECIES] || product.species}
+                        {PET_SPECIES_MAP[product.species as keyof typeof PET_SPECIES_MAP] || product.species}
                       </Badge>
                     </div>
                   )}
