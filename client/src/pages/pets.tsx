@@ -25,7 +25,7 @@ export default function Pets() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: pets, isLoading } = useQuery({
+  const { data: pets = [], isLoading } = useQuery<Pet[]>({
     queryKey: ['/api/pets'],
   });
 
@@ -50,12 +50,13 @@ export default function Pets() {
     },
   });
 
-  const filteredPets = pets?.filter((pet: Pet) => {
-    const matchesSearch = pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (pet.breed && pet.breed.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredPets = pets.filter((pet: Pet) => {
+    const matchesSearch =
+      pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (pet.breed && pet.breed.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesSpecies = !selectedSpecies || pet.species === selectedSpecies;
     return matchesSearch && matchesSpecies;
-  }) || [];
+  });
 
   const handleCreatePet = (data: any) => {
     createPetMutation.mutate(data);

@@ -430,7 +430,7 @@ export const updatePetOwnerProfileSchema = insertPetOwnerProfileSchema.extend({
 });
 
 // Type exports for form validation
-export type InsertPet = z.infer<typeof insertPetSchema>;
+export type InsertPetForm = z.infer<typeof insertPetSchema>;
 export type UpdatePet = z.infer<typeof updatePetSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type RegisterUser = z.infer<typeof registerUserSchema>;

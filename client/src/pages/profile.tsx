@@ -74,7 +74,7 @@ export default function ProfilePage() {
   });
 
   // Fetch user's pets (only for PET_OWNER role)
-  const { data: pets, isLoading: isPetsLoading } = useQuery({
+  const { data: pets = [], isLoading: isPetsLoading } = useQuery<Pet[]>({
     queryKey: ["/api/pets"],
     enabled: profileData?.user?.role === 'PET_OWNER',
   });
@@ -721,7 +721,7 @@ export default function ProfilePage() {
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3">
                               <Avatar className="h-12 w-12">
-                                <AvatarImage src={pet.avatarUrl} alt={pet.name} />
+                                <AvatarImage src={pet.avatarUrl || undefined} alt={pet.name} />
                                 <AvatarFallback className="bg-medical-blue/10 text-medical-blue font-semibold">
                                   {pet.name.charAt(0).toUpperCase()}
                                 </AvatarFallback>

@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
-import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Stethoscope } from 'lucide-react';
+import { FileText, Plus, Search, Filter, Download, Eye, Calendar, Stethoscope, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoadingSpinner from '@/components/common/loading-spinner';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface MedicalRecord {
   id: string;
@@ -34,18 +40,35 @@ interface MedicalRecord {
   status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 }
 
+interface Pet {
+  id: string;
+  name: string;
+}
+
 export default function MedicalRecords() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('');
   const [selectedPet, setSelectedPet] = useState<string>('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewRecord, setViewRecord] = useState<MedicalRecord | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
 
-  const { data: medicalRecords, isLoading } = useQuery({
-    queryKey: ['/api/medical-records'],
+  const { data: medicalRecords = [], isLoading } = useQuery<MedicalRecord[]>({
+    queryKey: ['medical-records', selectedType, selectedPet],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedType) params.set('type', selectedType);
+      if (selectedPet) params.set('petId', selectedPet);
+      const res = await apiRequest('GET', `/api/medical-records?${params.toString()}`);
+      return res.json();
+    },
   });
 
-  const { data: pets } = useQuery({
+  const { data: pets = [] } = useQuery<Pet[]>({
     queryKey: ['/api/pets'],
   });
 
@@ -75,7 +98,95 @@ export default function MedicalRecords() {
     }
   };
 
-  const filteredRecords = (medicalRecords || []).filter((record: MedicalRecord) => {
+  const recordFormSchema = z.object({
+    petId: z.string().min(1, 'Hayvan seçiniz'),
+    type: z.string().min(1, 'Tür seçiniz'),
+    title: z.string().min(1, 'Başlık gereklidir'),
+    description: z.string().min(1, 'Açıklama gereklidir'),
+    visitDate: z.string().min(1, 'Tarih gereklidir'),
+    nextVisitDate: z.string().optional(),
+    diagnosis: z.string().optional(),
+    treatment: z.string().optional(),
+    prescription: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof recordFormSchema>>({
+    resolver: zodResolver(recordFormSchema),
+    defaultValues: {
+      petId: '',
+      type: '',
+      title: '',
+      description: '',
+      visitDate: '',
+      nextVisitDate: '',
+      diagnosis: '',
+      treatment: '',
+      prescription: '',
+    },
+  });
+
+  const editForm = useForm<z.infer<typeof recordFormSchema>>({
+    resolver: zodResolver(recordFormSchema),
+  });
+
+  const createRecordMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof recordFormSchema>) => {
+      const res = await apiRequest('POST', '/api/medical-records', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] });
+      setIsCreateOpen(false);
+      form.reset();
+      toast({
+        title: 'Kayıt Oluşturuldu',
+        description: 'Yeni tıbbi kayıt eklendi.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Hata',
+        description: 'Kayıt oluşturulamadı.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const updateRecordMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof recordFormSchema>) => {
+      if (!editingRecord) throw new Error('No record selected');
+      const res = await apiRequest('PUT', `/api/medical-records/${editingRecord.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] });
+      setIsEditOpen(false);
+      setEditingRecord(null);
+      toast({ title: 'Kayıt Güncellendi', description: 'Tıbbi kayıt güncellendi.' });
+    },
+    onError: () => {
+      toast({ title: 'Hata', description: 'Kayıt güncellenemedi.', variant: 'destructive' });
+    },
+  });
+
+  const deleteRecordMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/medical-records/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] });
+      toast({ title: 'Kayıt silindi' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Hata',
+        description: error.message || 'Kayıt silinemedi.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const filteredRecords = medicalRecords.filter((record: MedicalRecord) => {
     const matchesSearch = 
       record.petName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,16 +225,381 @@ export default function MedicalRecords() {
             <Download className="h-4 w-4 mr-2" />
             Rapor İndir
           </Button>
-          
-          <Button
-            className="bg-medical-blue hover:bg-medical-blue/90"
-            data-testid="button-add-record"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Yeni Kayıt
-          </Button>
+
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-medical-blue hover:bg-medical-blue/90"
+                data-testid="button-add-record"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Yeni Kayıt
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Yeni Tıbbi Kayıt</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit((data) => createRecordMutation.mutate(data))}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="petId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hayvan</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Hayvan seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {pets.map((pet) => (
+                              <SelectItem key={pet.id} value={pet.id}>
+                                {pet.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tür</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Tür seçiniz" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Object.entries(recordTypes).map(([key, type]) => (
+                              <SelectItem key={key} value={key}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Başlık</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Açıklama</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="visitDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ziyaret Tarihi</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="nextVisitDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sonraki Ziyaret</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="diagnosis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Teşhis</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="treatment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tedavi</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="prescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Reçete</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full bg-medical-blue hover:bg-medical-blue/90">
+                    Kaydı Oluştur
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Kayıdı Düzenle</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit((data) => updateRecordMutation.mutate(data))}
+              className="space-y-4"
+            >
+              <FormField
+                control={editForm.control}
+                name="petId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hayvan</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Hayvan seçiniz" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {pets.map((pet) => (
+                          <SelectItem key={pet.id} value={pet.id}>
+                            {pet.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tür</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Tür seçiniz" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(recordTypes).map(([key, type]) => (
+                          <SelectItem key={key} value={key}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Başlık</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Açıklama</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="visitDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ziyaret Tarihi</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="nextVisitDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sonraki Ziyaret</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="diagnosis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teşhis</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="treatment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tedavi</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="prescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reçete</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full bg-medical-blue hover:bg-medical-blue/90">
+                Kaydı Güncelle
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Kayıt Detayları</DialogTitle>
+          </DialogHeader>
+          {viewRecord && (
+            <div className="space-y-3">
+              <div>
+                <h3 className="font-semibold">{viewRecord.title}</h3>
+                <p className="text-sm text-professional-gray">{viewRecord.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="font-medium">Hayvan:</span>
+                <span>{viewRecord.petName}</span>
+                <span className="font-medium">Tür:</span>
+                <span>{recordTypes[viewRecord.type].label}</span>
+                <span className="font-medium">Veteriner:</span>
+                <span>Dr. {viewRecord.vetName}</span>
+                <span className="font-medium">Ziyaret Tarihi:</span>
+                <span>{format(new Date(viewRecord.visitDate), 'dd MMMM yyyy', { locale: tr })}</span>
+                {viewRecord.nextVisitDate && (
+                  <>
+                    <span className="font-medium">Sonraki Ziyaret:</span>
+                    <span>{format(new Date(viewRecord.nextVisitDate), 'dd MMMM yyyy', { locale: tr })}</span>
+                  </>
+                )}
+                {viewRecord.diagnosis && (
+                  <>
+                    <span className="font-medium">Teşhis:</span>
+                    <span>{viewRecord.diagnosis}</span>
+                  </>
+                )}
+                {viewRecord.treatment && (
+                  <>
+                    <span className="font-medium">Tedavi:</span>
+                    <span>{viewRecord.treatment}</span>
+                  </>
+                )}
+                {viewRecord.prescription && (
+                  <>
+                    <span className="font-medium">Reçete:</span>
+                    <span>{viewRecord.prescription}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -166,7 +642,7 @@ export default function MedicalRecords() {
                   className="px-3 py-2 border border-gray-300 rounded-md focus:ring-medical-blue focus:border-medical-blue"
                 >
                   <option value="">Tüm Hayvanlar</option>
-                  {pets?.map((pet: any) => (
+                  {pets.map((pet) => (
                     <option key={pet.id} value={pet.id}>{pet.name}</option>
                   ))}
                 </select>
@@ -229,7 +705,14 @@ export default function MedicalRecords() {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setViewRecord(record);
+                          setIsViewOpen(true);
+                        }}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         Görüntüle
                       </Button>
@@ -240,6 +723,38 @@ export default function MedicalRecords() {
                           Dosyalar
                         </Button>
                       )}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingRecord(record);
+                          setIsEditOpen(true);
+                          editForm.reset({
+                            petId: record.petId,
+                            type: record.type,
+                            title: record.title,
+                            description: record.description,
+                            visitDate: record.visitDate.split('T')[0],
+                            nextVisitDate: record.nextVisitDate ? record.nextVisitDate.split('T')[0] : '',
+                            diagnosis: record.diagnosis || '',
+                            treatment: record.treatment || '',
+                            prescription: record.prescription || '',
+                          });
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" />
+                        Düzenle
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteRecordMutation.mutate(record.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Sil
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>

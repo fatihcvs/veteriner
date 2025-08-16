@@ -16,10 +16,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, logoutMutation } = useAuth();
 
   return (
-    <div className={cn(
-      "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-      open ? "translate-x-0" : "-translate-x-full"
-    )}>
+    <div
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-md border-r border-slate-200 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        open ? "translate-x-0" : "-translate-x-full"
+      )}
+    >
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="p-6 border-b border-slate-200">

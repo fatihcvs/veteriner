@@ -72,7 +72,7 @@
 - AI service fees: ₺40,000/month
 - **Total MRR Goal: ₺265,000/month**
 
-## Daily Auto-Dev Focus Areas
+## Development Focus Areas
 
 1. **Code Quality**: Maintain <6.0 complexity score, fix LSP errors
 2. **Performance**: Keep load times under 1.5s, optimize database queries
