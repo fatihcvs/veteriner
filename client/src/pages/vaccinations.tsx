@@ -14,21 +14,22 @@ import VaccinationForm from '@/components/vaccinations/vaccination-form';
 import { VACCINATION_STATUS } from '@/lib/constants';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import type { VaccinationEvent, Vaccine, Pet } from '@shared/schema';
 
 export default function Vaccinations() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overdue');
   const { toast } = useToast();
 
-  const { data: overdueVaccinations = [], isLoading: overdueLoading } = useQuery({
+  const { data: overdueVaccinations = [], isLoading: overdueLoading } = useQuery<VaccinationEvent[]>({
     queryKey: ['/api/vaccinations/overdue'],
   });
 
-  const { data: vaccines = [] } = useQuery({
+  const { data: vaccines = [] } = useQuery<Vaccine[]>({
     queryKey: ['/api/vaccines'],
   });
 
-  const { data: pets = [] } = useQuery({
+  const { data: pets = [] } = useQuery<Pet[]>({
     queryKey: ['/api/pets'],
   });
 

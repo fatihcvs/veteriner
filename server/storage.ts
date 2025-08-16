@@ -11,6 +11,7 @@ import {
   orderItems,
   notifications,
   appointments,
+  medicalRecords,
   petOwnerProfiles,
   type User,
   type UpsertUser,
@@ -31,12 +32,15 @@ import {
   type InsertNotification,
   type PetOwnerProfile,
   type InsertPetOwnerProfile,
+  type MedicalRecord,
+  type InsertMedicalRecord,
   type UpdateUserProfile,
   type UpdatePetOwnerProfile,
 } from '@shared/schema';
 import { randomUUID } from 'crypto';
 import { db } from './db';
 import { eq, sql, desc, and, gte, lt, or } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
@@ -79,6 +83,7 @@ export interface IStorage {
   
   // Vaccination operations
   getVaccines(): Promise<Vaccine[]>;
+  getVaccine(id: string): Promise<Vaccine | undefined>;
   createVaccine(vaccine: InsertVaccine): Promise<Vaccine>;
   getVaccinationEvent(id: string): Promise<VaccinationEvent | undefined>;
   createVaccinationEvent(event: InsertVaccinationEvent): Promise<VaccinationEvent>;
@@ -109,7 +114,13 @@ export interface IStorage {
   getClinicAllAppointments(clinicId: string): Promise<any[]>;
   getUserAppointments(userId: string): Promise<any[]>;
   updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
-  
+
+  // Medical record operations
+  getClinicMedicalRecords(clinicId: string): Promise<any[]>;
+  createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
+  updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord>;
+  deleteMedicalRecord(id: string): Promise<void>;
+
   // Feeding plan operations
   createFeedingPlan(plan: any): Promise<any>;
   getFeedingPlans(userId?: string, clinicId?: string): Promise<any[]>;
@@ -184,7 +195,18 @@ export class DatabaseStorage implements IStorage {
     if (existing) {
       return existing;
     }
-    return this.createUser(user);
+    return this.createUser({
+      ...user,
+      role: user.role ?? 'PET_OWNER',
+      firstName: user.firstName ?? null,
+      lastName: user.lastName ?? null,
+      profileImageUrl: user.profileImageUrl ?? null,
+      phone: user.phone ?? null,
+      whatsappPhone: user.whatsappPhone ?? null,
+      whatsappOptIn: user.whatsappOptIn ?? false,
+      locale: user.locale ?? 'tr',
+      verifiedAt: user.verifiedAt ?? null,
+    });
   }
 
   async updateUser(id: string, updates: UpdateUserProfile): Promise<User> {
@@ -297,6 +319,11 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(vaccines);
   }
 
+  async getVaccine(id: string): Promise<Vaccine | undefined> {
+    const [vaccine] = await db.select().from(vaccines).where(eq(vaccines.id, id));
+    return vaccine || undefined;
+  }
+
   async createVaccine(vaccineData: InsertVaccine): Promise<Vaccine> {
     const [vaccine] = await db.insert(vaccines).values(vaccineData).returning();
     return vaccine;
@@ -401,20 +428,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClinicAppointments(clinicId: string, date?: string): Promise<any[]> {
-    let query = db.select().from(appointments).where(eq(appointments.clinicId, clinicId));
-    
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
-      query = query.where(and(
-        gte(appointments.scheduledAt, startDate),
-        lt(appointments.scheduledAt, endDate)
-      ));
+      const conditions = [eq(appointments.clinicId, clinicId)];
+
+      if (date) {
+        const startDate = new Date(date);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 1);
+        conditions.push(gte(appointments.scheduledAt, startDate));
+        conditions.push(lt(appointments.scheduledAt, endDate));
+      }
+
+      return await db.select().from(appointments).where(and(...conditions));
     }
-    
-    return await query;
-  }
 
   async getClinicAllAppointments(clinicId: string): Promise<any[]> {
     return await db.select().from(appointments).where(eq(appointments.clinicId, clinicId));
@@ -439,6 +464,55 @@ export class DatabaseStorage implements IStorage {
       .where(eq(appointments.id, id))
       .returning();
     return appointment;
+  }
+
+  // Medical record operations
+  async getClinicMedicalRecords(clinicId: string): Promise<any[]> {
+    const owner = alias(users, 'owner');
+    const vet = alias(users, 'vet');
+    return await db
+      .select({
+        id: medicalRecords.id,
+        petId: medicalRecords.petId,
+        type: medicalRecords.type,
+        title: medicalRecords.title,
+        description: medicalRecords.description,
+        diagnosis: medicalRecords.diagnosis,
+        treatment: medicalRecords.treatment,
+        prescription: medicalRecords.prescription,
+        visitDate: medicalRecords.visitDate,
+        nextVisitDate: medicalRecords.nextVisitDate,
+        status: medicalRecords.status,
+        attachments: medicalRecords.attachments,
+        createdAt: medicalRecords.createdAt,
+        petName: pets.name,
+        petSpecies: pets.species,
+        ownerName: sql<string>`concat(${owner.firstName}, ' ', ${owner.lastName})`,
+        vetName: sql<string>`concat(${vet.firstName}, ' ', ${vet.lastName})`,
+      })
+      .from(medicalRecords)
+      .innerJoin(pets, eq(medicalRecords.petId, pets.id))
+      .innerJoin(owner, eq(pets.ownerId, owner.id))
+      .innerJoin(vet, eq(medicalRecords.vetUserId, vet.id))
+      .where(eq(pets.clinicId, clinicId));
+  }
+
+  async createMedicalRecord(recordData: InsertMedicalRecord): Promise<MedicalRecord> {
+    const [record] = await db.insert(medicalRecords).values(recordData).returning();
+    return record;
+  }
+
+  async updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord> {
+    const [record] = await db
+      .update(medicalRecords)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(medicalRecords.id, id))
+      .returning();
+    return record;
+  }
+
+  async deleteMedicalRecord(id: string): Promise<void> {
+    await db.delete(medicalRecords).where(eq(medicalRecords.id, id));
   }
 
   // Feeding plan operations (placeholder)
@@ -549,18 +623,20 @@ export class DatabaseStorage implements IStorage {
     return staff.find(s => s.id === staffId);
   }
 
-  async createStaffMember(staffData: any): Promise<any> {
-    const newUser = await this.createUser({
-      email: staffData.email,
-      password: staffData.password || await hashPassword('defaultpass123'),
-      firstName: staffData.firstName,
-      lastName: staffData.lastName,
-      phone: staffData.phone,
-      role: staffData.role,
-      verifiedAt: new Date(),
-      whatsappOptIn: false,
-      locale: 'tr'
-    });
+    async createStaffMember(staffData: any): Promise<any> {
+      const newUser = await this.createUser({
+        email: staffData.email,
+        password: staffData.password || await hashPassword('defaultpass123'),
+        firstName: staffData.firstName,
+        lastName: staffData.lastName,
+        phone: staffData.phone,
+        profileImageUrl: staffData.profileImageUrl ?? null,
+        whatsappPhone: staffData.whatsappPhone ?? null,
+        role: staffData.role,
+        verifiedAt: new Date(),
+        whatsappOptIn: false,
+        locale: 'tr'
+      });
 
     return {
       id: newUser.id,
@@ -745,21 +821,22 @@ async function seedData() {
   try {
     // Check if admin user exists
     const adminUser = await storage.getUserByEmail('admin@vettrack.pro');
-    if (!adminUser) {
-      console.log('Creating admin user...');
-      await storage.createUser({
-        email: 'admin@vettrack.pro',
-        password: await hashPassword('admin123'),
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'SUPER_ADMIN',
-        phone: '+90555123456',
-        whatsappPhone: '+90555123456',
-        whatsappOptIn: true,
-        locale: 'tr',
-        verifiedAt: new Date(),
-      });
-    }
+      if (!adminUser) {
+        console.log('Creating admin user...');
+        await storage.createUser({
+          email: 'admin@vettrack.pro',
+          password: await hashPassword('admin123'),
+          firstName: 'Admin',
+          lastName: 'User',
+          role: 'SUPER_ADMIN',
+          phone: '+90555123456',
+          whatsappPhone: '+90555123456',
+          profileImageUrl: null,
+          whatsappOptIn: true,
+          locale: 'tr',
+          verifiedAt: new Date(),
+        });
+      }
 
     // Check if products exist
     const existingProducts = await storage.getFoodProducts();

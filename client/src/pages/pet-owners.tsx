@@ -35,11 +35,11 @@ export default function PetOwners() {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
 
-  const { data: petOwners, isLoading } = useQuery({
+  const { data: petOwners = [], isLoading } = useQuery<PetOwner[]>({
     queryKey: ['/api/pet-owners'],
   });
 
-  const filteredOwners = (petOwners || []).filter((owner: PetOwner) => {
+  const filteredOwners = petOwners.filter((owner: PetOwner) => {
     const matchesSearch = 
       owner.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       owner.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
