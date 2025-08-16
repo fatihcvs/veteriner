@@ -20,6 +20,17 @@ test('insertMedicalRecordSchema rejects missing fields', () => {
   assert.throws(() => insertMedicalRecordSchema.parse({}), /Required/);
 });
 
+test('insertMedicalRecordSchema requires vetUserId', () => {
+  const record = {
+    petId: crypto.randomUUID(),
+    type: 'EXAMINATION',
+    title: 'Kontrol',
+    description: 'Rutin',
+    visitDate: new Date(),
+  } as any;
+  assert.throws(() => insertMedicalRecordSchema.parse(record), /vetUserId/);
+});
+
 test('updateMedicalRecordSchema allows partial data', () => {
   const update = { title: 'Yeni Başlık' };
   const parsed = insertMedicalRecordSchema.partial().parse(update);

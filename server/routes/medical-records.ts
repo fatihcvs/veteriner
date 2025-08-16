@@ -27,6 +27,19 @@ router.get('/', async (req: any, res) => {
   }
 });
 
+router.get('/:id', async (req: any, res) => {
+  try {
+    const record = await storage.getMedicalRecord(req.params.id);
+    if (!record) {
+      return res.status(404).json({ message: 'Medical record not found' });
+    }
+    res.json(record);
+  } catch (error) {
+    console.error('Error fetching medical record:', error);
+    res.status(500).json({ message: 'Failed to fetch medical record' });
+  }
+});
+
 router.post('/', async (req: any, res) => {
   try {
     const data = insertMedicalRecordSchema.parse({

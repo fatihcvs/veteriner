@@ -120,6 +120,7 @@ export interface IStorage {
     clinicId: string,
     filters?: { petId?: string; type?: string },
   ): Promise<any[]>;
+  getMedicalRecord(id: string): Promise<MedicalRecord | undefined>;
   createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
   updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord>;
   deleteMedicalRecord(id: string): Promise<void>;
@@ -504,6 +505,14 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(owner, eq(pets.ownerId, owner.id))
       .innerJoin(vet, eq(medicalRecords.vetUserId, vet.id))
       .where(and(...conditions));
+  }
+
+  async getMedicalRecord(id: string): Promise<MedicalRecord | undefined> {
+    const [record] = await db
+      .select()
+      .from(medicalRecords)
+      .where(eq(medicalRecords.id, id));
+    return record || undefined;
   }
 
   async createMedicalRecord(recordData: InsertMedicalRecord): Promise<MedicalRecord> {
