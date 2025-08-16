@@ -15,7 +15,11 @@ router.get('/', async (req: any, res) => {
     if (!clinicId) {
       return res.json([]);
     }
-    const records = await storage.getClinicMedicalRecords(clinicId);
+    const filters = {
+      petId: req.query.petId as string | undefined,
+      type: req.query.type as string | undefined,
+    };
+    const records = await storage.getClinicMedicalRecords(clinicId, filters);
     res.json(records);
   } catch (error) {
     console.error('Error fetching medical records:', error);

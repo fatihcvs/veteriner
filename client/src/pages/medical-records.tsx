@@ -58,7 +58,14 @@ export default function MedicalRecords() {
   const { toast } = useToast();
 
   const { data: medicalRecords = [], isLoading } = useQuery<MedicalRecord[]>({
-    queryKey: ['/api/medical-records'],
+    queryKey: ['medical-records', selectedType, selectedPet],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedType) params.set('type', selectedType);
+      if (selectedPet) params.set('petId', selectedPet);
+      const res = await apiRequest('GET', `/api/medical-records?${params.toString()}`);
+      return res.json();
+    },
   });
 
   const { data: pets = [] } = useQuery<Pet[]>({
@@ -128,7 +135,7 @@ export default function MedicalRecords() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-records'] });
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] });
       setIsCreateOpen(false);
       form.reset();
       toast({
@@ -152,7 +159,7 @@ export default function MedicalRecords() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-records'] });
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] });
       setIsEditOpen(false);
       setEditingRecord(null);
       toast({ title: 'Kayıt Güncellendi', description: 'Tıbbi kayıt güncellendi.' });
@@ -167,7 +174,7 @@ export default function MedicalRecords() {
       await apiRequest('DELETE', `/api/medical-records/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-records'] });
+      queryClient.invalidateQueries({ queryKey: ['medical-records'] });
       toast({ title: 'Kayıt silindi' });
     },
     onError: (error: any) => {

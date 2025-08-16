@@ -116,7 +116,10 @@ export interface IStorage {
   updateAppointment(id: string, updates: Partial<Appointment>): Promise<Appointment>;
 
   // Medical record operations
-  getClinicMedicalRecords(clinicId: string): Promise<any[]>;
+  getClinicMedicalRecords(
+    clinicId: string,
+    filters?: { petId?: string; type?: string },
+  ): Promise<any[]>;
   createMedicalRecord(record: InsertMedicalRecord): Promise<MedicalRecord>;
   updateMedicalRecord(id: string, updates: Partial<MedicalRecord>): Promise<MedicalRecord>;
   deleteMedicalRecord(id: string): Promise<void>;
@@ -467,9 +470,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Medical record operations
-  async getClinicMedicalRecords(clinicId: string): Promise<any[]> {
+  async getClinicMedicalRecords(
+    clinicId: string,
+    filters: { petId?: string; type?: string } = {},
+  ): Promise<any[]> {
     const owner = alias(users, 'owner');
     const vet = alias(users, 'vet');
+    const conditions = [eq(pets.clinicId, clinicId)];
+    if (filters.petId) conditions.push(eq(medicalRecords.petId, filters.petId));
+    if (filters.type) conditions.push(eq(medicalRecords.type, filters.type));
     return await db
       .select({
         id: medicalRecords.id,
@@ -494,7 +503,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(pets, eq(medicalRecords.petId, pets.id))
       .innerJoin(owner, eq(pets.ownerId, owner.id))
       .innerJoin(vet, eq(medicalRecords.vetUserId, vet.id))
-      .where(eq(pets.clinicId, clinicId));
+      .where(and(...conditions));
   }
 
   async createMedicalRecord(recordData: InsertMedicalRecord): Promise<MedicalRecord> {
