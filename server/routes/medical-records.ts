@@ -37,6 +37,20 @@ router.post('/', async (req: any, res) => {
   }
 });
 
+router.put('/:id', async (req: any, res) => {
+  try {
+    const data = insertMedicalRecordSchema.partial().parse({
+      ...req.body,
+      vetUserId: req.user.id,
+    });
+    const record = await storage.updateMedicalRecord(req.params.id, data);
+    res.json(record);
+  } catch (error: any) {
+    console.error('Error updating medical record:', error);
+    res.status(400).json({ message: error.message || 'Failed to update medical record' });
+  }
+});
+
 router.delete('/:id', async (req: any, res) => {
   try {
     await storage.deleteMedicalRecord(req.params.id);

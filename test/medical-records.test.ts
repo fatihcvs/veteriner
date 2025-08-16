@@ -19,3 +19,9 @@ test('insertMedicalRecordSchema parses valid record', () => {
 test('insertMedicalRecordSchema rejects missing fields', () => {
   assert.throws(() => insertMedicalRecordSchema.parse({}), /Required/);
 });
+
+test('updateMedicalRecordSchema allows partial data', () => {
+  const update = { title: 'Yeni Başlık' };
+  const parsed = insertMedicalRecordSchema.partial().parse(update);
+  assert.equal(parsed.title, 'Yeni Başlık');
+});
